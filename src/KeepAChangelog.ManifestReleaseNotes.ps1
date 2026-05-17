@@ -21,6 +21,7 @@ function Get-KeepAChangelogManifestReleaseNotes {
         [string] $FullChangelogUrl
     )
 
+    $newLine = Get-KeepAChangelogNewLine
     $sections = Read-KeepAChangelogSections -Path $Path
     $startIndex = -1
     for ($index = 0; $index -lt $sections.Count; $index++) {
@@ -40,14 +41,14 @@ function Get-KeepAChangelogManifestReleaseNotes {
             $section.Heading
             ''
             $section.Body
-        ) -join $script:PSKeepAChangelogToolsNewLine
+        ) -join $newLine
     }
 
     (@(
-        ($sectionTexts -join ($script:PSKeepAChangelogToolsNewLine + $script:PSKeepAChangelogToolsNewLine))
+        ($sectionTexts -join ($newLine + $newLine))
         ''
         "Full CHANGELOG: $FullChangelogUrl"
-    ) -join $script:PSKeepAChangelogToolsNewLine).TrimEnd("`r", "`n")
+    ) -join $newLine).TrimEnd("`r", "`n")
 }
 
 function Set-KeepAChangelogManifestReleaseNotes {
@@ -62,6 +63,7 @@ function Set-KeepAChangelogManifestReleaseNotes {
         [string] $ReleaseNotes
     )
 
+    $newLine = Get-KeepAChangelogNewLine
     if (-not (Test-Path -LiteralPath $ManifestPath -PathType Leaf)) {
         throw "Manifest not found: $ManifestPath"
     }
@@ -74,14 +76,14 @@ function Set-KeepAChangelogManifestReleaseNotes {
     }
 
     $indent = $match.Groups['Indent'].Value
-    $normalizedReleaseNotes = ($ReleaseNotes -replace "`r?`n", $script:PSKeepAChangelogToolsNewLine).TrimEnd("`r", "`n")
+    $normalizedReleaseNotes = ($ReleaseNotes -replace "`r?`n", $newLine).TrimEnd("`r", "`n")
     $replacement = @(
         "${indent}# ReleaseNotes of this module"
         "${indent}ReleaseNotes = @'"
         $normalizedReleaseNotes
         "'@"
         ''
-    ) -join $script:PSKeepAChangelogToolsNewLine
+    ) -join $newLine
 
     $updatedContent = $content.Substring(0, $match.Index) + $replacement + $content.Substring($match.Index + $match.Length)
 

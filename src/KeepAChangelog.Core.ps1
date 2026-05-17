@@ -1,7 +1,5 @@
 Set-StrictMode -Version Latest
 
-$script:PSKeepAChangelogToolsNewLine = "`n"
-
 function Resolve-KeepAChangelogPath {
     [CmdletBinding()]
     [OutputType([string])]

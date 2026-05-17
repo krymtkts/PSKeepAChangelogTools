@@ -1,6 +1,11 @@
 BeforeAll {
-    $corePath = Join-Path $PSScriptRoot '../../src/KeepAChangelog.Core.ps1'
-    $manifestHelperPath = Join-Path $PSScriptRoot '../../src/KeepAChangelog.ManifestReleaseNotes.ps1'
+    . (Join-Path $PSScriptRoot '../TestCommon.ps1')
+    $moduleRoot = Get-PSKeepAChangelogToolsTestModuleRoot
+
+    $commonPath = Join-Path $moduleRoot 'src/KeepAChangelog.Common.ps1'
+    $corePath = Join-Path $moduleRoot 'src/KeepAChangelog.Core.ps1'
+    $manifestHelperPath = Join-Path $moduleRoot 'src/KeepAChangelog.ManifestReleaseNotes.ps1'
+    . $commonPath
     . $corePath
     . $manifestHelperPath
 

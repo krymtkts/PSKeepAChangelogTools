@@ -1,6 +1,7 @@
 Set-StrictMode -Version Latest
 
 $filesToLoad = @(
+    'src/KeepAChangelog.Common.ps1'
     'src/KeepAChangelog.Core.ps1'
     'src/KeepAChangelog.ManifestReleaseNotes.ps1'
 )

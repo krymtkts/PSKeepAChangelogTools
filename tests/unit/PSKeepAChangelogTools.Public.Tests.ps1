@@ -1,5 +1,8 @@
 BeforeAll {
-    $script:ModuleManifestPath = Join-Path $PSScriptRoot '../../PSKeepAChangelogTools.psd1'
+    . (Join-Path $PSScriptRoot '../TestCommon.ps1')
+    $moduleRoot = Get-PSKeepAChangelogToolsTestModuleRoot
+
+    $script:ModuleManifestPath = Join-Path $moduleRoot 'PSKeepAChangelogTools.psd1'
     Import-Module -Name $script:ModuleManifestPath -Force
 
     $script:NewTestChangelogContent = {
@@ -169,8 +172,8 @@ Describe 'PSKeepAChangelogTools public API' {
         $command.ParameterSets | Should -HaveCount 1
         $parameterSet = $command.ParameterSets[0]
 
-        ($parameterSet.Parameters | Where-Object Name -eq 'Version').IsMandatory | Should -BeTrue
-        ($parameterSet.Parameters | Where-Object Name -eq 'ReleaseTag').IsMandatory | Should -BeFalse
+        ($parameterSet.Parameters | Where-Object Name -EQ 'Version').IsMandatory | Should -BeTrue
+        ($parameterSet.Parameters | Where-Object Name -EQ 'ReleaseTag').IsMandatory | Should -BeFalse
     }
 
     It 'rejects an empty release tag before running release metadata validation' {

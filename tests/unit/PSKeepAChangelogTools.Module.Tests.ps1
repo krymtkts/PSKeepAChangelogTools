@@ -1,5 +1,8 @@
 BeforeAll {
-    $script:ModuleManifestPath = Join-Path $PSScriptRoot '../../PSKeepAChangelogTools.psd1'
+    . (Join-Path $PSScriptRoot '../TestCommon.ps1')
+    $moduleRoot = Get-PSKeepAChangelogToolsTestModuleRoot
+
+    $script:ModuleManifestPath = Join-Path $moduleRoot 'PSKeepAChangelogTools.psd1'
     $script:ExpectedCommands = @(
         'Assert-KeepAChangelogReleaseMetadata'
         'Get-KeepAChangelogEntry'
