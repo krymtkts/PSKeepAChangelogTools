@@ -1,6 +1,6 @@
 BeforeAll {
-    $corePath = Join-Path $PSScriptRoot '..\..\src\KeepAChangelog.Core.ps1'
-    $manifestHelperPath = Join-Path $PSScriptRoot '..\..\src\Private.ManifestReleaseNotes.ps1'
+    $corePath = Join-Path $PSScriptRoot '../../src/KeepAChangelog.Core.ps1'
+    $manifestHelperPath = Join-Path $PSScriptRoot '../../src/KeepAChangelog.ManifestReleaseNotes.ps1'
     . $corePath
     . $manifestHelperPath
 
@@ -39,12 +39,12 @@ BeforeAll {
     }
 }
 
-Describe 'Get-ManifestReleaseNotes' {
+Describe 'Get-KeepAChangelogManifestReleaseNotes' {
     It 'formats the target version and the next two older versions plus a full changelog link' {
         $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
         (& $script:NewTestChangelogContent) | Set-Content -LiteralPath $changelogPath -NoNewline
 
-        $content = Get-ManifestReleaseNotes -Path $changelogPath -Version '1.1.2' -RecentCount 3 -FullChangelogUrl 'https://example.test/CHANGELOG.md'
+        $content = Get-KeepAChangelogManifestReleaseNotes -Path $changelogPath -Version '1.1.2' -RecentCount 3 -FullChangelogUrl 'https://example.test/CHANGELOG.md'
 
         $content | Should -BeExactly (@(
                 '## [1.1.2] - 2023-03-07'
@@ -73,7 +73,7 @@ Describe 'Get-ManifestReleaseNotes' {
         $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
         (& $script:NewTestChangelogContent) | Set-Content -LiteralPath $changelogPath -NoNewline
 
-        $content = Get-ManifestReleaseNotes -Path $changelogPath -Version '1.1.1' -RecentCount 3 -FullChangelogUrl 'https://example.test/CHANGELOG.md'
+        $content = Get-KeepAChangelogManifestReleaseNotes -Path $changelogPath -Version '1.1.1' -RecentCount 3 -FullChangelogUrl 'https://example.test/CHANGELOG.md'
 
         $content | Should -BeExactly (@(
                 '## [1.1.1] - 2023-03-06'
@@ -96,7 +96,7 @@ Describe 'Get-ManifestReleaseNotes' {
         $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
         (& $script:NewTestChangelogContent) | Set-Content -LiteralPath $changelogPath -NoNewline
 
-        $content = Get-ManifestReleaseNotes -Path $changelogPath -Version '1.1.2' -RecentCount 2 -FullChangelogUrl 'https://example.test/CHANGELOG.md'
+        $content = Get-KeepAChangelogManifestReleaseNotes -Path $changelogPath -Version '1.1.2' -RecentCount 2 -FullChangelogUrl 'https://example.test/CHANGELOG.md'
 
         $content | Should -BeExactly (@(
                 '## [1.1.2] - 2023-03-07'
@@ -114,9 +114,18 @@ Describe 'Get-ManifestReleaseNotes' {
                 'Full CHANGELOG: https://example.test/CHANGELOG.md'
             ) -join "`n")
     }
+
+    It 'requires an explicit version' {
+        $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
+        (& $script:NewTestChangelogContent) | Set-Content -LiteralPath $changelogPath -NoNewline
+
+        {
+            Get-KeepAChangelogManifestReleaseNotes -Path $changelogPath -ReleaseTag 'v1.1.2' -RecentCount 2 -FullChangelogUrl 'https://example.test/CHANGELOG.md'
+        } | Should -Throw
+    }
 }
 
-Describe 'Set-ManifestReleaseNotes' {
+Describe 'Set-KeepAChangelogManifestReleaseNotes' {
     It 'writes a release notes here-string that Import-PowerShellDataFile can read' {
         $manifestPath = Join-Path $TestDrive 'test.psd1'
         @(
@@ -139,7 +148,7 @@ Describe 'Set-ManifestReleaseNotes' {
             '- Add thing'
         ) -join "`n"
 
-        Set-ManifestReleaseNotes -ManifestPath $manifestPath -ReleaseNotes $releaseNotes
+        Set-KeepAChangelogManifestReleaseNotes -ManifestPath $manifestPath -ReleaseNotes $releaseNotes
         $manifest = Import-PowerShellDataFile -Path $manifestPath
         $manifestText = Get-Content -LiteralPath $manifestPath -Raw
 
@@ -171,7 +180,7 @@ Describe 'Set-ManifestReleaseNotes' {
             '- New line'
         ) -join "`n"
 
-        Set-ManifestReleaseNotes -ManifestPath $manifestPath -ReleaseNotes $releaseNotes
+        Set-KeepAChangelogManifestReleaseNotes -ManifestPath $manifestPath -ReleaseNotes $releaseNotes
         $manifest = Import-PowerShellDataFile -Path $manifestPath
         $manifestText = Get-Content -LiteralPath $manifestPath -Raw
 

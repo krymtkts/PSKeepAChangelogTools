@@ -1,5 +1,5 @@
 BeforeAll {
-    $corePath = Join-Path $PSScriptRoot '..\..\src\KeepAChangelog.Core.ps1'
+    $corePath = Join-Path $PSScriptRoot '../../src/KeepAChangelog.Core.ps1'
     . $corePath
 
     $script:NewTestChangelogContent = {
@@ -37,12 +37,12 @@ BeforeAll {
     }
 }
 
-Describe 'Get-ChangelogSections' {
+Describe 'Read-KeepAChangelogSections' {
     It 'returns version sections with heading and body' {
         $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
         (& $script:NewTestChangelogContent) | Set-Content -LiteralPath $changelogPath -NoNewline
 
-        $sections = Get-ChangelogSections -Path $changelogPath
+        $sections = Read-KeepAChangelogSections -Path $changelogPath
 
         $sections.Count | Should -Be 4
         $sections[1].Version | Should -BeExactly '1.1.2'
@@ -55,8 +55,8 @@ Describe 'Get-ChangelogSections' {
     }
 }
 
-Describe 'Get-ChangelogEntry' {
-    It 'returns the target section body without footer markers' {
+Describe 'Find-KeepAChangelogSection' {
+    It 'returns the target section without footer markers' {
         $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
         @(
             '# Changelog'
@@ -76,9 +76,10 @@ Describe 'Get-ChangelogEntry' {
             '[Unreleased]: https://example.test/commits/main'
         ) -join "`n" | Set-Content -LiteralPath $changelogPath -NoNewline
 
-        $entry = Get-ChangelogEntry -Path $changelogPath -Version 'Unreleased'
+        $section = Find-KeepAChangelogSection -Path $changelogPath -Version 'Unreleased'
 
-        $entry | Should -BeExactly (@(
+        $section.Heading | Should -BeExactly '## [Unreleased]'
+        $section.Body | Should -BeExactly (@(
                 '### Added'
                 ''
                 '- Add thing'
@@ -97,7 +98,7 @@ Describe 'Get-ChangelogEntry' {
             '## [Unreleased]'
         ) -join "`n" | Set-Content -LiteralPath $changelogPath -NoNewline
 
-        { Get-ChangelogEntry -Path $changelogPath -Version '0.0.1-alpha' } |
+        { Find-KeepAChangelogSection -Path $changelogPath -Version '0.0.1-alpha' } |
             Should -Throw 'Changelog entry not found for version: 0.0.1-alpha'
     }
 }
@@ -121,36 +122,3 @@ Describe 'ConvertFrom-ReleaseTagToVersion' {
     }
 }
 
-Describe 'Assert-ReleaseMetadata' {
-    It 'passes when the changelog section exists and the release tag matches the version' {
-        $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
-        (& $script:NewTestChangelogContent) | Set-Content -LiteralPath $changelogPath -NoNewline
-
-        { Assert-ReleaseMetadata -Path $changelogPath -Version '1.1.2' -ReleaseTag 'v1.1.2' } |
-            Should -Not -Throw
-    }
-
-    It 'passes when the changelog section exists and no release tag is supplied' {
-        $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
-        (& $script:NewTestChangelogContent) | Set-Content -LiteralPath $changelogPath -NoNewline
-
-        { Assert-ReleaseMetadata -Path $changelogPath -Version '1.1.2' } |
-            Should -Not -Throw
-    }
-
-    It 'fails when the changelog section is missing' {
-        $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
-        (& $script:NewTestChangelogContent) | Set-Content -LiteralPath $changelogPath -NoNewline
-
-        { Assert-ReleaseMetadata -Path $changelogPath -Version '2.0.0' -ReleaseTag 'v2.0.0' } |
-            Should -Throw 'Changelog entry not found for version: 2.0.0'
-    }
-
-    It 'fails when the release tag version does not match the manifest version' {
-        $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
-        (& $script:NewTestChangelogContent) | Set-Content -LiteralPath $changelogPath -NoNewline
-
-        { Assert-ReleaseMetadata -Path $changelogPath -Version '1.1.2' -ReleaseTag 'v1.1.1' } |
-            Should -Throw 'Release tag version does not match manifest version. Tag: 1.1.1, Manifest: 1.1.2'
-    }
-}

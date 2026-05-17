@@ -1,12 +1,12 @@
 Set-StrictMode -Version Latest
 
-function Get-ManifestReleaseNotes {
+function Get-KeepAChangelogManifestReleaseNotes {
     [CmdletBinding()]
     [OutputType([string])]
     param(
         [Parameter()]
         [ValidateNotNullOrEmpty()]
-        [string] $Path = (Get-ChangelogPath),
+        [string] $Path = (Resolve-KeepAChangelogPath),
 
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
@@ -50,7 +50,7 @@ function Get-ManifestReleaseNotes {
     ) -join $script:PSKeepAChangelogToolsNewLine).TrimEnd("`r", "`n")
 }
 
-function Set-ManifestReleaseNotes {
+function Set-KeepAChangelogManifestReleaseNotes {
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory)]
@@ -85,10 +85,8 @@ function Set-ManifestReleaseNotes {
 
     $updatedContent = $content.Substring(0, $match.Index) + $replacement + $content.Substring($match.Index + $match.Length)
 
-    if (-not $PSCmdlet.ShouldProcess($ManifestPath, 'Update manifest ReleaseNotes')) {
-        return
+    if ($PSCmdlet.ShouldProcess($ManifestPath, 'Update manifest ReleaseNotes')) {
+        $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+        [System.IO.File]::WriteAllText($ManifestPath, $updatedContent, $utf8NoBom)
     }
-
-    $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
-    [System.IO.File]::WriteAllText($ManifestPath, $updatedContent, $utf8NoBom)
 }

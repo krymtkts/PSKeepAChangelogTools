@@ -1,6 +1,5 @@
 Set-StrictMode -Version Latest
 
-$script:PSKeepAChangelogToolsRoot = Split-Path -Parent $PSScriptRoot
 $script:PSKeepAChangelogToolsNewLine = "`n"
 
 function Resolve-KeepAChangelogPath {
@@ -78,102 +77,6 @@ function Find-KeepAChangelogSection {
     $section
 }
 
-function Get-KeepAChangelogSections {
-    [CmdletBinding()]
-    [OutputType([object[]])]
-    param(
-        [Parameter()]
-        [ValidateNotNullOrEmpty()]
-        [string] $Path = (Resolve-KeepAChangelogPath)
-    )
-
-    Read-KeepAChangelogSections -Path $Path
-}
-
-function Get-KeepAChangelogSection {
-    [CmdletBinding()]
-    [OutputType([object])]
-    param(
-        [Parameter()]
-        [ValidateNotNullOrEmpty()]
-        [string] $Path = (Resolve-KeepAChangelogPath),
-
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string] $Version
-    )
-
-    Find-KeepAChangelogSection -Path $Path -Version $Version
-}
-
-function Get-KeepAChangelogEntry {
-    [CmdletBinding()]
-    [OutputType([string])]
-    param(
-        [Parameter()]
-        [ValidateNotNullOrEmpty()]
-        [string] $Path = (Resolve-KeepAChangelogPath),
-
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string] $Version
-    )
-
-    (Find-KeepAChangelogSection -Path $Path -Version $Version).Body
-}
-
-function Get-ChangelogSections {
-    [CmdletBinding()]
-    [OutputType([object[]])]
-    param(
-        [Parameter()]
-        [ValidateNotNullOrEmpty()]
-        [string] $Path = (Get-ChangelogPath)
-    )
-
-    Read-KeepAChangelogSections -Path $Path
-}
-
-function Get-ChangelogPath {
-    [CmdletBinding()]
-    [OutputType([string])]
-    param()
-
-    Join-Path $script:PSKeepAChangelogToolsRoot 'CHANGELOG.md'
-}
-
-function Get-ChangelogSection {
-    [CmdletBinding()]
-    [OutputType([object])]
-    param(
-        [Parameter()]
-        [ValidateNotNullOrEmpty()]
-        [string] $Path = (Get-ChangelogPath),
-
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string] $Version
-    )
-
-    Find-KeepAChangelogSection -Path $Path -Version $Version
-}
-
-function Get-ChangelogEntry {
-    [CmdletBinding()]
-    [OutputType([string])]
-    param(
-        [Parameter()]
-        [ValidateNotNullOrEmpty()]
-        [string] $Path = (Get-ChangelogPath),
-
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string] $Version
-    )
-
-    (Find-KeepAChangelogSection -Path $Path -Version $Version).Body
-}
-
 function ConvertFrom-ReleaseTagToVersion {
     [CmdletBinding()]
     [OutputType([string])]
@@ -192,9 +95,57 @@ function ConvertFrom-ReleaseTagToVersion {
     $match.Groups['Version'].Value
 }
 
-function Test-KeepAChangelogReleaseMetadata {
+function Get-KeepAChangelogSection {
+    [CmdletBinding(DefaultParameterSetName = 'List')]
+    [OutputType([object[]])]
+    [OutputType([object])]
+    param(
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string] $Path = (Resolve-KeepAChangelogPath),
+
+        [Parameter(Mandatory, ParameterSetName = 'ByVersion')]
+        [ValidateNotNullOrEmpty()]
+        [string] $Version
+    )
+
+    if ($PSCmdlet.ParameterSetName -eq 'List') {
+        Read-KeepAChangelogSections -Path $Path
+    }
+    else {
+        Find-KeepAChangelogSection -Path $Path -Version $Version
+    }
+}
+
+function Get-KeepAChangelogEntry {
+    [CmdletBinding(DefaultParameterSetName = 'ByVersion')]
+    [OutputType([string])]
+    param(
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string] $Path = (Resolve-KeepAChangelogPath),
+
+        [Parameter(Mandatory, ParameterSetName = 'ByVersion')]
+        [ValidateNotNullOrEmpty()]
+        [string] $Version,
+
+        [Parameter(Mandatory, ParameterSetName = 'ByReleaseTag')]
+        [ValidateNotNullOrEmpty()]
+        [string] $ReleaseTag
+    )
+
+    $resolvedVersion = if ($PSCmdlet.ParameterSetName -eq 'ByReleaseTag') {
+        ConvertFrom-ReleaseTagToVersion -ReleaseTag $ReleaseTag
+    }
+    else {
+        $Version
+    }
+
+    (Find-KeepAChangelogSection -Path $Path -Version $resolvedVersion).Body
+}
+
+function Assert-KeepAChangelogReleaseMetadata {
     [CmdletBinding()]
-    [OutputType([bool])]
     param(
         [Parameter()]
         [ValidateNotNullOrEmpty()]
@@ -205,39 +156,16 @@ function Test-KeepAChangelogReleaseMetadata {
         [string] $Version,
 
         [Parameter()]
-        [AllowNull()]
+        [ValidateNotNullOrEmpty()]
         [string] $ReleaseTag
     )
 
     Find-KeepAChangelogSection -Path $Path -Version $Version | Out-Null
 
-    if ([string]::IsNullOrWhiteSpace($ReleaseTag)) {
-        return $true
+    if ($PSBoundParameters.ContainsKey('ReleaseTag')) {
+        $tagVersion = ConvertFrom-ReleaseTagToVersion -ReleaseTag $ReleaseTag
+        if ($tagVersion -ne $Version) {
+            throw "Release tag version does not match manifest version. Tag: $tagVersion, Manifest: $Version"
+        }
     }
-
-    $tagVersion = ConvertFrom-ReleaseTagToVersion -ReleaseTag $ReleaseTag
-    if ($tagVersion -ne $Version) {
-        throw "Release tag version does not match manifest version. Tag: $tagVersion, Manifest: $Version"
-    }
-
-    $true
-}
-
-function Assert-ReleaseMetadata {
-    [CmdletBinding()]
-    param(
-        [Parameter()]
-        [ValidateNotNullOrEmpty()]
-        [string] $Path = (Get-ChangelogPath),
-
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string] $Version,
-
-        [Parameter()]
-        [AllowNull()]
-        [string] $ReleaseTag
-    )
-
-    Test-KeepAChangelogReleaseMetadata -Path $Path -Version $Version -ReleaseTag $ReleaseTag | Out-Null
 }

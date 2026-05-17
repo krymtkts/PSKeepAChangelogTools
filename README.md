@@ -12,14 +12,15 @@ It treats `CHANGELOG.md` as the source of truth and supports:
 - optional PowerShell-specific helpers such as module manifest `ReleaseNotes`
   synchronization
 
-## Public core commands
+## Public commands
 
-| Command                              | Purpose                                                          |
-| ------------------------------------ | ---------------------------------------------------------------- |
-| `Get-KeepAChangelogSections`         | Read all version sections from a changelog file.                 |
-| `Get-KeepAChangelogSection`          | Read one version section by version.                             |
-| `Get-KeepAChangelogEntry`            | Read one version section body without its heading.               |
-| `Test-KeepAChangelogReleaseMetadata` | Check version and release-tag consistency against the changelog. |
+| Command                                  | Purpose                                                            |
+| ---------------------------------------- | ------------------------------------------------------------------ |
+| `Get-KeepAChangelogSection`              | Read all sections, or one section by `-Version`.                   |
+| `Get-KeepAChangelogEntry`                | Read one section body by `-Version` or `-ReleaseTag`.              |
+| `Assert-KeepAChangelogReleaseMetadata`   | Validate a versioned section, with optional release tag checking.  |
+| `Get-KeepAChangelogManifestReleaseNotes` | Render manifest-oriented release notes for a target `-Version`.    |
+| `Set-KeepAChangelogManifestReleaseNotes` | Write derived release notes into a module manifest `ReleaseNotes`. |
 
 ## Format notes
 
