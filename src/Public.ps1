@@ -1,1 +1,0 @@
-Set-StrictMode -Version Latest

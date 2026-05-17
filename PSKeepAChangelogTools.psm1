@@ -1,9 +1,8 @@
 Set-StrictMode -Version Latest
 
 $filesToLoad = @(
-    'src/Private.Core.ps1'
-    'src/Private.ReleaseNotes.ps1'
-    'src/Public.ps1'
+    'src/KeepAChangelog.Core.ps1'
+    'src/Private.ManifestReleaseNotes.ps1'
 )
 
 foreach ($relativePath in $filesToLoad) {

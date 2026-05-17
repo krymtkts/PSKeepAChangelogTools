@@ -1,5 +1,11 @@
 BeforeAll {
     $script:ModuleManifestPath = Join-Path $PSScriptRoot '..\..\PSKeepAChangelogTools.psd1'
+    $script:ExpectedCommands = @(
+        'Get-KeepAChangelogEntry'
+        'Get-KeepAChangelogSection'
+        'Get-KeepAChangelogSections'
+        'Test-KeepAChangelogReleaseMetadata'
+    )
 }
 
 Describe 'PSKeepAChangelogTools module scaffold' {
@@ -8,11 +14,11 @@ Describe 'PSKeepAChangelogTools module scaffold' {
             Should -Not -Throw
     }
 
-    It 'exports no public commands yet' {
+    It 'exports the expected public commands' {
         Import-Module -Name $script:ModuleManifestPath -Force
         $module = Get-Module -Name 'PSKeepAChangelogTools'
 
-        @($module.ExportedCommands.Keys).Count | Should -Be 0
+        @($module.ExportedCommands.Keys | Sort-Object) | Should -Be ($script:ExpectedCommands | Sort-Object)
     }
 }
 
