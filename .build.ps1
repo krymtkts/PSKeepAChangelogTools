@@ -159,12 +159,13 @@ Task UnitTest Lint, {
     Invoke-TestTask @parameters
 }
 
-Task IntegrationTest Build, {
-    Write-Host 'Running integration tests.' -ForegroundColor Yellow
+Task IntegrationTest Stage, {
+    Write-Host 'Running integration tests against staged module artifacts.' -ForegroundColor Yellow
 
     $parameters = @{
         TestPath = 'tests/integration'
         TestResultOutputPath = 'testResults.integration.xml'
+        ModuleRoot = $ModulePublishPath
         ModuleName = $ModuleName
     }
     if (-not $DisableCoverage) {
