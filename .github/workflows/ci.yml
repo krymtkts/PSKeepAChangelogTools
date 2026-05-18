@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-latest
+          - ubuntu-latest
+          - macos-latest
+        shell:
+          - pwsh
+        include:
+          - os: windows-latest
+            shell: powershell
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Restore dependencies and execute all tests
+        uses: ./.github/actions/restore-and-test
+        with:
+          shell: ${{ matrix.shell }}
+          disable-coverage: ${{ matrix.os != 'ubuntu-latest' }}

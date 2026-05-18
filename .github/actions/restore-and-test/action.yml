@@ -1,0 +1,48 @@
+name: Restore and test
+description: Bootstrap pslrm, restore locked development dependencies, and execute the full test suite.
+
+inputs:
+  shell:
+    description: Shell used to execute restore and test commands.
+    required: true
+  disable-coverage:
+    description: Whether to disable code coverage collection.
+    required: false
+    default: false
+
+runs:
+  using: composite
+  steps:
+    - name: Install modules from PSGallery (pwsh)
+      shell: ${{ inputs.shell }}
+      if: inputs.shell == 'pwsh'
+      run: |
+        Set-PSResourceRepository PSGallery -Trusted
+        Install-PSResource pslrm -Prerelease -Quiet -Reinstall -Scope CurrentUser
+        Restore-PSLResource
+
+    - name: Install modules from PSGallery (powershell)
+      shell: ${{ inputs.shell }}
+      if: inputs.shell == 'powershell'
+      run: |
+        Install-Module -Name Microsoft.PowerShell.PSResourceGet -Force -Scope CurrentUser -Repository PSGallery -SkipPublisherCheck -AllowPrerelease
+        # NOTE: PSResourceGet v1.2.0 may fail on first run unless the repository store is initialized.
+        # Cannot retrieve the dynamic parameters for the cmdlet. Loading repository store failed:  Could not find a part of the path 'C:\Users\runneradmin\AppData\Local\PSResourceGet\PSResourceRepository.xml'.
+        Get-PSResourceRepository | Out-Null
+        Set-PSResourceRepository -Name PSGallery -Trusted -ApiVersion V2
+        Install-PSResource pslrm -Prerelease -Quiet -Reinstall -Scope CurrentUser
+        Restore-PSLResource
+
+    - name: Execute all tests through Invoke-Build
+      shell: ${{ inputs.shell }}
+      env:
+        DISABLE_COVERAGE: ${{ inputs.disable-coverage }}
+      run: |
+        $params = @{
+            Tasks = 'TestAll'
+        }
+        if ($env:DISABLE_COVERAGE -eq 'true') {
+            $params['DisableCoverage'] = $true
+        }
+
+        & ./.build.ps1 @params
