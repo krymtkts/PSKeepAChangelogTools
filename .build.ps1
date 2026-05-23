@@ -70,8 +70,6 @@ if ($MyInvocation.InvocationName -ne '.') {
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-. (Join-Path $PSScriptRoot 'tools/ReleaseNotes.Helpers.ps1')
-
 $ModuleScript = Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.psm1' | Select-Object -First 1
 if (-not $ModuleScript) {
     throw "Module script (.psm1) not found under: $PSScriptRoot"
@@ -176,7 +174,7 @@ Task IntegrationTest Stage, {
 
 Task TestAll UnitTest, IntegrationTest
 
-Task ReleaseNotes Build, {
+Task ReleaseNotes Import, {
     Write-Host 'Syncing module manifest ReleaseNotes from CHANGELOG.md.' -ForegroundColor Yellow
 
     $releaseNotes = Get-KeepAChangelogManifestReleaseNotes -Path $ChangelogPath -Version $ModuleVersion -FullChangelogUrl $FullChangelogUrl
@@ -241,7 +239,7 @@ Task Import Stage, {
     }
 }
 
-Task ValidateReleaseMetadata ValidateReleaseParameters, Build, {
+Task ValidateReleaseMetadata ValidateReleaseParameters, Import, {
     Write-Host 'Validating release metadata.' -ForegroundColor Yellow
 
     Assert-KeepAChangelogReleaseMetadata -Path $ChangelogPath -Version $ModuleVersion -ReleaseTag $ReleaseTag
