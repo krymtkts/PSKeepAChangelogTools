@@ -1,7 +1,6 @@
 # PSKeepAChangelogTools
 
-PSKeepAChangelogTools is a PowerShell module for Keep a Changelog style
-changelogs.
+PSKeepAChangelogTools is a PowerShell module for Keep a Changelog style changelogs.
 
 The current design uses Keep a Changelog 1.1 as its basis.
 
@@ -24,8 +23,7 @@ It treats `CHANGELOG.md` as the source of truth and supports:
 
 ## Format notes
 
-This module follows Keep a Changelog style, but it does not enforce every part
-of the 1.1 example.
+This module follows Keep a Changelog style, but it does not enforce every part of the 1.1 example.
 
 - Release dates are not required yet.
   This avoids hidden timezone assumptions in automated heading generation.
