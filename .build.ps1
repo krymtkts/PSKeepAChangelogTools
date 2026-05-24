@@ -267,7 +267,7 @@ Task ReleaseTag ValidateReleaseMetadata, {
                 Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
         )
         if (-not $LASTEXITCODE) {
-            return $output
+            return , $output
         }
         if ($output.Count -eq 0) {
             throw $FailureMessage
