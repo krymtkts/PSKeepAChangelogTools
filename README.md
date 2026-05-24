@@ -39,3 +39,26 @@ This module follows Keep a Changelog style, but it does not enforce every part o
 - Check release metadata against changelog content.
 - Render release notes for GitHub releases and tag messages.
 - Synchronize derived release notes into PowerShell module manifests.
+
+## Development
+
+### Release
+
+Use `ReleaseTag` after you prepare the version metadata commit and configure Git signing.
+
+```powershell
+./.build.ps1 ReleaseTag -ReleaseTag v0.1.0
+git push origin v0.1.0
+```
+
+`ReleaseTag` creates a local signed annotated tag from `CHANGELOG.md`.
+It does not create the metadata commit.
+It does not push the tag.
+
+If you need to retry, do it before pushing. Delete the local tag and run the
+task again.
+
+```powershell
+git tag -d v0.1.0
+./.build.ps1 ReleaseTag -ReleaseTag v0.1.0
+```
