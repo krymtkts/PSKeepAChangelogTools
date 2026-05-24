@@ -79,7 +79,7 @@ jobs:
           }
 
           Import-Module Microsoft.PowerShell.PSResourceGet -ErrorAction Stop
-          Set-PSResourceRepository PSGallery -Trusted
+          Set-PSResourceRepository -Name PSGallery -Trusted -ApiVersion V2
 
           $module = Get-ChildItem -LiteralPath $env:GITHUB_WORKSPACE -Filter '*.psm1' -File | Select-Object -First 1
           if ($null -eq $module) {
@@ -96,7 +96,7 @@ jobs:
       - name: Restore modules from PSGallery
         if: github.event_name != 'workflow_dispatch' || inputs.mode == 'full'
         run: |
-          Set-PSResourceRepository PSGallery -Trusted
+          Set-PSResourceRepository -Name PSGallery -Trusted -ApiVersion V2
           Install-PSResource pslrm -Prerelease -Quiet -Reinstall -Scope CurrentUser
           Restore-PSLResource
 
@@ -123,7 +123,7 @@ jobs:
 
       - name: Restore modules from PSGallery
         run: |
-          Set-PSResourceRepository PSGallery -Trusted
+          Set-PSResourceRepository -Name PSGallery -Trusted -ApiVersion V2
           Install-PSResource pslrm -Prerelease -Quiet -Reinstall -Scope CurrentUser
           Restore-PSLResource
 
@@ -166,7 +166,7 @@ jobs:
 
       - name: Restore modules from PSGallery
         run: |
-          Set-PSResourceRepository PSGallery -Trusted
+          Set-PSResourceRepository -Name PSGallery -Trusted -ApiVersion V2
           Install-PSResource pslrm -Prerelease -Quiet -Reinstall -Scope CurrentUser
           Restore-PSLResource
 

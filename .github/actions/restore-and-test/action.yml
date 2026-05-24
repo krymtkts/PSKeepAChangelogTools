@@ -17,7 +17,7 @@ runs:
       shell: ${{ inputs.shell }}
       if: inputs.shell == 'pwsh'
       run: |
-        Set-PSResourceRepository PSGallery -Trusted
+        Set-PSResourceRepository -Name PSGallery -Trusted -ApiVersion V2
         Install-PSResource pslrm -Prerelease -Quiet -Reinstall -Scope CurrentUser
         Restore-PSLResource
 

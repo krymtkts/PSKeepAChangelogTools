@@ -314,6 +314,8 @@ Task Release ValidateReleaseMetadata, ReleaseTestAll, {
         throw "Version inconsistency between staged manifest and project manifest. Staged: ${manifestModuleVersion}, Project: ${ModuleVersion}"
     }
 
+    Set-PSResourceRepository -Name PSGallery -Trusted -ApiVersion V2
+
     $parameters = @{
         Path = $ModulePublishPath
         Repository = 'PSGallery'
