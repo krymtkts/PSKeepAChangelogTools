@@ -33,7 +33,7 @@ runs:
           # Cannot retrieve the dynamic parameters for the cmdlet. Loading repository store failed:  Could not find a part of the path 'C:\Users\runneradmin\AppData\Local\PSResourceGet\PSResourceRepository.xml'.
           Get-PSResourceRepository | Out-Null
         }
-        Set-PSResourceRepository -Name PSGallery -Trusted -ApiVersion V2
+        Set-PSResourceRepository -Name PSGallery -Trusted
         # NOTE: In Windows PowerShell CI, we bootstrap Microsoft.PowerShell.PSResourceGet before calling Install-PSResource.
         # NOTE: pslrm declares PSResourceGet as a dependency, and the dependency install would otherwise try to replace the same loaded module under CurrentUser.
         # NOTE: SkipDependencyCheck avoids that self-reinstall conflict.
