@@ -25,6 +25,7 @@ runs:
       shell: ${{ inputs.shell }}
       if: inputs.shell == 'powershell'
       run: |
+        # NOTE: -Repository PSGallery is required in Windows PowerShell CI to avoid untrusted repository prompts that cannot be bypassed in non-interactive mode.
         if (-not (Get-Command Install-PSResource -ErrorAction SilentlyContinue)) {
           Write-Host "Installing Microsoft.PowerShell.PSResourceGet to bootstrap pslrm installation."
           Install-Module -Name Microsoft.PowerShell.PSResourceGet -Force -Scope CurrentUser -Repository PSGallery -SkipPublisherCheck -AllowPrerelease
@@ -36,7 +37,7 @@ runs:
         # NOTE: In Windows PowerShell CI, we bootstrap Microsoft.PowerShell.PSResourceGet before calling Install-PSResource.
         # NOTE: pslrm declares PSResourceGet as a dependency, and the dependency install would otherwise try to replace the same loaded module under CurrentUser.
         # NOTE: SkipDependencyCheck avoids that self-reinstall conflict.
-        Install-PSResource pslrm -Prerelease -Quiet -Scope CurrentUser -Repository PSGallery -TrustRepository -SkipDependencyCheck
+        Install-PSResource pslrm -Prerelease -Quiet -Scope CurrentUser -Repository PSGallery -SkipDependencyCheck
         Restore-PSLResource
 
     - name: Execute all tests through Invoke-Build
