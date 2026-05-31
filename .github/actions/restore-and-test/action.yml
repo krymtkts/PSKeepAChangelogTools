@@ -17,24 +17,27 @@ runs:
       shell: ${{ inputs.shell }}
       if: inputs.shell == 'pwsh'
       run: |
-        Set-PSResourceRepository -Name PSGallery -Trusted -ApiVersion V2
-        Install-PSResource pslrm -Prerelease -Quiet -Reinstall -Scope CurrentUser
+        Set-PSResourceRepository -Name PSGallery -Trusted
+        Install-PSResource pslrm -Prerelease -Quiet -Scope CurrentUser
         Restore-PSLResource
 
     - name: Install modules from PSGallery (powershell)
       shell: ${{ inputs.shell }}
       if: inputs.shell == 'powershell'
       run: |
-        Install-Module -Name Microsoft.PowerShell.PSResourceGet -Force -Scope CurrentUser -Repository PSGallery -SkipPublisherCheck -AllowPrerelease
-        Import-Module ((Get-Module -ListAvailable -Name Microsoft.PowerShell.PSResourceGet | Sort-Object Version -Descending | Select-Object -First 1).Path) -Force -ErrorAction Stop
-        # NOTE: PSResourceGet v1.2.0 may fail on first run unless the repository store is initialized.
-        # Cannot retrieve the dynamic parameters for the cmdlet. Loading repository store failed:  Could not find a part of the path 'C:\Users\runneradmin\AppData\Local\PSResourceGet\PSResourceRepository.xml'.
-        Get-PSResourceRepository | Out-Null
-        Set-PSResourceRepository -Name PSGallery -Trusted -ApiVersion V2
+        # NOTE: -Repository PSGallery is required in Windows PowerShell CI to avoid untrusted repository prompts that cannot be bypassed in non-interactive mode.
+        if (-not (Get-Command Install-PSResource -ErrorAction SilentlyContinue)) {
+          Write-Host "Installing Microsoft.PowerShell.PSResourceGet to bootstrap pslrm installation."
+          Install-Module -Name Microsoft.PowerShell.PSResourceGet -Force -Scope CurrentUser -Repository PSGallery -SkipPublisherCheck -AllowPrerelease
+          # NOTE: PSResourceGet v1.2.0 may fail on first run unless the repository store is initialized.
+          # Cannot retrieve the dynamic parameters for the cmdlet. Loading repository store failed:  Could not find a part of the path 'C:\Users\runneradmin\AppData\Local\PSResourceGet\PSResourceRepository.xml'.
+          Get-PSResourceRepository | Out-Null
+        }
+        Set-PSResourceRepository -Name PSGallery -Trusted
         # NOTE: In Windows PowerShell CI, we bootstrap Microsoft.PowerShell.PSResourceGet before calling Install-PSResource.
         # NOTE: pslrm declares PSResourceGet as a dependency, and the dependency install would otherwise try to replace the same loaded module under CurrentUser.
         # NOTE: SkipDependencyCheck avoids that self-reinstall conflict.
-        Install-PSResource pslrm -Prerelease -Quiet -Scope CurrentUser -Repository PSGallery -TrustRepository -SkipDependencyCheck
+        Install-PSResource pslrm -Prerelease -Quiet -Scope CurrentUser -Repository PSGallery -SkipDependencyCheck
         Restore-PSLResource
 
     - name: Execute all tests through Invoke-Build
