@@ -6,7 +6,9 @@ on:
     - cron: "37 6 * * 5"
       timezone: "Asia/Tokyo"
 
-permissions: {}
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   bump:
