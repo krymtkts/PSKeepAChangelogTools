@@ -83,9 +83,7 @@ jobs:
             return
           }
 
-          Import-Module Microsoft.PowerShell.PSResourceGet -ErrorAction Stop
-          Set-PSResourceRepository -Name PSGallery -Trusted -ApiVersion V2
-
+          ./scripts/Initialize-PSResourceRepository.ps1
           $module = Get-ChildItem -LiteralPath $env:GITHUB_WORKSPACE -Filter '*.psm1' -File | Select-Object -First 1
           if ($null -eq $module) {
             throw 'Module script (*.psm1) was not found in the workspace.'
@@ -101,8 +99,7 @@ jobs:
       - name: Restore modules from PSGallery
         if: github.event_name != 'workflow_dispatch' || inputs.mode == 'full'
         run: |
-          Set-PSResourceRepository -Name PSGallery -Trusted -ApiVersion V2
-          Install-PSResource pslrm -Prerelease -Quiet -Reinstall -Scope CurrentUser
+          ./scripts/Initialize-PSResourceRepository.ps1 -InstallPslrm
           Restore-PSLResource
 
       - name: Execute release tests
@@ -128,8 +125,7 @@ jobs:
 
       - name: Restore modules from PSGallery
         run: |
-          Set-PSResourceRepository -Name PSGallery -Trusted -ApiVersion V2
-          Install-PSResource pslrm -Prerelease -Quiet -Reinstall -Scope CurrentUser
+          ./scripts/Initialize-PSResourceRepository.ps1 -InstallPslrm
           Restore-PSLResource
 
       - name: Publish module to PSGallery
@@ -171,8 +167,7 @@ jobs:
 
       - name: Restore modules from PSGallery
         run: |
-          Set-PSResourceRepository -Name PSGallery -Trusted -ApiVersion V2
-          Install-PSResource pslrm -Prerelease -Quiet -Reinstall -Scope CurrentUser
+          ./scripts/Initialize-PSResourceRepository.ps1 -InstallPslrm
           Restore-PSLResource
 
       - name: Generate release notes body
