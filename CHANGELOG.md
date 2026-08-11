@@ -9,6 +9,7 @@ This changelog uses the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 ### Changed
 
 - Require a `---` separator before link definitions at the end of `CHANGELOG.md`.
+- Update existing manifest release note values and add a missing `PrivateData.PSData.ReleaseNotes` path. Preserve unrelated text, encoding, byte order marks, and line endings.
 
 ## [0.1.0]
 
