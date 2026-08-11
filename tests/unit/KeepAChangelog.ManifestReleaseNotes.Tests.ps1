@@ -224,7 +224,7 @@ Describe 'Set-KeepAChangelogManifestReleaseNotes' {
             '    PrivateData = @{'
             '        PSData = @{'
             '            # ReleaseNotes of this module'
-            "            # ReleaseNotes = ''"
+            "            ReleaseNotes = ''"
             ''
             '            # Prerelease string of this module'
             "            Prerelease = 'alpha'"
@@ -245,6 +245,55 @@ Describe 'Set-KeepAChangelogManifestReleaseNotes' {
 
         $manifest.PrivateData.PSData.ReleaseNotes | Should -BeExactly $releaseNotes
         $manifestText | Should -Not -Match "`r"
+    }
+
+    It 'replaces a commented ReleaseNotes property without changing surrounding content' {
+        $manifestPath = Join-Path $TestDrive 'commented.psd1'
+        @(
+            '@{'
+            '    PrivateData = @{'
+            '        PSData = @{'
+            '            # ReleaseNotes of this module'
+            "            # ReleaseNotes = ''"
+            ''
+            "            ProjectUri = 'https://example.test/project'"
+            ''
+            '            # Prerelease string of this module'
+            "            Prerelease = 'alpha'"
+            '        }'
+            '    }'
+            '}'
+        ) -join "`n" | Set-Content -LiteralPath $manifestPath -NoNewline
+
+        $releaseNotes = @(
+            '### Added'
+            ''
+            '- Add thing'
+        ) -join "`n"
+
+        Set-KeepAChangelogManifestReleaseNotes -ManifestPath $manifestPath -ReleaseNotes $releaseNotes
+
+        $manifest = Import-PowerShellDataFile -LiteralPath $manifestPath
+        $manifest.PrivateData.PSData.ReleaseNotes | Should -BeExactly $releaseNotes
+        Get-Content -LiteralPath $manifestPath -Raw | Should -BeExactly (@(
+                '@{'
+                '    PrivateData = @{'
+                '        PSData = @{'
+                '            # ReleaseNotes of this module'
+                "            ReleaseNotes = @'"
+                '### Added'
+                ''
+                '- Add thing'
+                "'@"
+                ''
+                "            ProjectUri = 'https://example.test/project'"
+                ''
+                '            # Prerelease string of this module'
+                "            Prerelease = 'alpha'"
+                '        }'
+                '    }'
+                '}'
+            ) -join "`n")
     }
 
     It 'replaces existing ReleaseNotes content instead of appending to it' {
@@ -277,6 +326,93 @@ Describe 'Set-KeepAChangelogManifestReleaseNotes' {
 
         $manifest.PrivateData.PSData.ReleaseNotes | Should -BeExactly $releaseNotes
         $manifestText | Should -Not -Match 'old line'
+    }
+
+    It 'updates ReleaseNotes without relying on manifest comments' {
+        $manifestPath = Join-Path $TestDrive 'without-comments.psd1'
+        @(
+            '@{'
+            '    PrivateData = @{'
+            '        PSData = @{'
+            "            ReleaseNotes = ''"
+            "            Prerelease = 'alpha'"
+            '        }'
+            '    }'
+            '}'
+        ) -join "`n" | Set-Content -LiteralPath $manifestPath -NoNewline
+
+        $releaseNotes = @(
+            '### Fixed'
+            ''
+            '- Update without comments'
+        ) -join "`n"
+
+        Set-KeepAChangelogManifestReleaseNotes -ManifestPath $manifestPath -ReleaseNotes $releaseNotes
+
+        $manifest = Import-PowerShellDataFile -LiteralPath $manifestPath
+        $manifest.PrivateData.PSData.ReleaseNotes | Should -BeExactly $releaseNotes
+        $manifest.PrivateData.PSData.Prerelease | Should -BeExactly 'alpha'
+        Get-Content -LiteralPath $manifestPath -Raw | Should -BeExactly (@(
+                '@{'
+                '    PrivateData = @{'
+                '        PSData = @{'
+                "            ReleaseNotes = @'"
+                '### Fixed'
+                ''
+                '- Update without comments'
+                "'@"
+                "            Prerelease = 'alpha'"
+                '        }'
+                '    }'
+                '}'
+            ) -join "`n")
+    }
+
+    It 'adds ReleaseNotes when the property is missing from PSData' {
+        $manifestPath = Join-Path $TestDrive 'without-release-notes.psd1'
+        @(
+            '@{'
+            '    PrivateData = @{'
+            '        PSData = @{'
+            "            Prerelease = 'alpha'"
+            '        }'
+            '    }'
+            '}'
+        ) -join "`n" | Set-Content -LiteralPath $manifestPath -NoNewline
+
+        Set-KeepAChangelogManifestReleaseNotes -ManifestPath $manifestPath -ReleaseNotes 'new notes'
+
+        $manifest = Import-PowerShellDataFile -LiteralPath $manifestPath
+        $manifest.PrivateData.PSData.ReleaseNotes | Should -BeExactly 'new notes'
+        $manifest.PrivateData.PSData.Prerelease | Should -BeExactly 'alpha'
+    }
+
+    It 'adds PSData and ReleaseNotes when PSData is missing from PrivateData' {
+        $manifestPath = Join-Path $TestDrive 'without-psdata.psd1'
+        @(
+            '@{'
+            '    PrivateData = @{'
+            "        Note = 'keep'"
+            '    }'
+            '}'
+        ) -join "`n" | Set-Content -LiteralPath $manifestPath -NoNewline
+
+        Set-KeepAChangelogManifestReleaseNotes -ManifestPath $manifestPath -ReleaseNotes 'new notes'
+
+        $manifest = Import-PowerShellDataFile -LiteralPath $manifestPath
+        $manifest.PrivateData.PSData.ReleaseNotes | Should -BeExactly 'new notes'
+        $manifest.PrivateData.Note | Should -BeExactly 'keep'
+    }
+
+    It 'adds PrivateData, PSData, and ReleaseNotes when PrivateData is missing' {
+        $manifestPath = Join-Path $TestDrive 'without-private-data.psd1'
+        "@{ ModuleVersion = '1.0.0' }" | Set-Content -LiteralPath $manifestPath -NoNewline
+
+        Set-KeepAChangelogManifestReleaseNotes -ManifestPath $manifestPath -ReleaseNotes 'new notes'
+
+        $manifest = Import-PowerShellDataFile -LiteralPath $manifestPath
+        $manifest.PrivateData.PSData.ReleaseNotes | Should -BeExactly 'new notes'
+        $manifest.ModuleVersion | Should -BeExactly '1.0.0'
     }
 
     It 'preserves UTF-8 without a byte order mark and LF line endings' {
