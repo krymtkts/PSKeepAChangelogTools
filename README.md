@@ -43,8 +43,35 @@ This module follows Keep a Changelog style, but it does not enforce every part o
 - Semantic Versioning is not required by default.
   Version rules remain project policy rather than parser policy.
 - Footer links are optional.
-  The module recommends an explicit `---` separator.
+  A `CHANGELOG.md` that ends with a link definition block requires a `---` separator before the block.
   This keeps footer editing automation-safe.
+
+After the separator, use empty lines and link definitions. Start each link
+definition at the beginning of a line.
+
+```markdown
+# Changelog
+
+## [Unreleased]
+
+### Added
+
+- Add a new feature.
+
+## [1.0.0] - 2026-08-11
+
+### Added
+
+- Publish the first release.
+
+---
+
+[Unreleased]: https://github.com/example/project/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/example/project/releases/tag/v1.0.0
+```
+
+Parsing fails when a file-ending link definition block has no separator.
+The parser preserves horizontal rules elsewhere in section bodies.
 
 ## Usage
 

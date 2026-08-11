@@ -6,6 +6,10 @@ This changelog uses the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [Unreleased]
 
+### Changed
+
+- Require a `---` separator before link definitions at the end of `CHANGELOG.md`.
+
 ## [0.1.0]
 
 ### Added
