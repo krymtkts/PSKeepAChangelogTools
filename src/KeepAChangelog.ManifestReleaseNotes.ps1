@@ -289,7 +289,7 @@ function Get-KeepAChangelogManifestReleaseNotesEdit {
     $closingLinePrefix = $Content.Substring($closingLineStart, $closingBraceOffset - $closingLineStart)
     if ($closingLineStart -gt $hashtableAst.Extent.StartOffset -and $closingLinePrefix -match '^[ \t]*$') {
         $startOffset = $closingLineStart
-        $replacement = $pathContent + $NewLine + $closingLinePrefix
+        $replacement = $pathContent + $NewLine
     }
     else {
         $startOffset = $closingBraceOffset

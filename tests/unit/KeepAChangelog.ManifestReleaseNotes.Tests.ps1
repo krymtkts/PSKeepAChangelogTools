@@ -385,6 +385,18 @@ Describe 'Set-KeepAChangelogManifestReleaseNotes' {
         $manifest = Import-PowerShellDataFile -LiteralPath $manifestPath
         $manifest.PrivateData.PSData.ReleaseNotes | Should -BeExactly 'new notes'
         $manifest.PrivateData.PSData.Prerelease | Should -BeExactly 'alpha'
+        Get-Content -LiteralPath $manifestPath -Raw | Should -BeExactly (@(
+                '@{'
+                '    PrivateData = @{'
+                '        PSData = @{'
+                "            Prerelease = 'alpha'"
+                "            ReleaseNotes = @'"
+                'new notes'
+                "'@"
+                '        }'
+                '    }'
+                '}'
+            ) -join "`n")
     }
 
     It 'adds PSData and ReleaseNotes when PSData is missing from PrivateData' {
@@ -402,17 +414,70 @@ Describe 'Set-KeepAChangelogManifestReleaseNotes' {
         $manifest = Import-PowerShellDataFile -LiteralPath $manifestPath
         $manifest.PrivateData.PSData.ReleaseNotes | Should -BeExactly 'new notes'
         $manifest.PrivateData.Note | Should -BeExactly 'keep'
+        Get-Content -LiteralPath $manifestPath -Raw | Should -BeExactly (@(
+                '@{'
+                '    PrivateData = @{'
+                "        Note = 'keep'"
+                '        PSData = @{'
+                "            ReleaseNotes = @'"
+                'new notes'
+                "'@"
+                '        }'
+                '    }'
+                '}'
+            ) -join "`n")
+    }
+
+    It 'preserves comments and blank lines when adding PSData and ReleaseNotes' {
+        $manifestPath = Join-Path $TestDrive 'without-psdata-with-comments.psd1'
+        @(
+            '@{'
+            '    PrivateData = @{'
+            '        # Existing private data'
+            "        Note = 'keep' # Keep this inline comment"
+            ''
+            '    }'
+            '}'
+        ) -join "`n" | Set-Content -LiteralPath $manifestPath -NoNewline
+
+        Set-KeepAChangelogManifestReleaseNotes -ManifestPath $manifestPath -ReleaseNotes 'new notes'
+
+        Get-Content -LiteralPath $manifestPath -Raw | Should -BeExactly (@(
+                '@{'
+                '    PrivateData = @{'
+                '        # Existing private data'
+                "        Note = 'keep' # Keep this inline comment"
+                ''
+                '        PSData = @{'
+                "            ReleaseNotes = @'"
+                'new notes'
+                "'@"
+                '        }'
+                '    }'
+                '}'
+            ) -join "`n")
     }
 
     It 'adds PrivateData, PSData, and ReleaseNotes when PrivateData is missing' {
         $manifestPath = Join-Path $TestDrive 'without-private-data.psd1'
-        "@{ ModuleVersion = '1.0.0' }" | Set-Content -LiteralPath $manifestPath -NoNewline
+        "@{ ModuleVersion = '1.0.0'}" | Set-Content -LiteralPath $manifestPath -NoNewline
 
         Set-KeepAChangelogManifestReleaseNotes -ManifestPath $manifestPath -ReleaseNotes 'new notes'
 
         $manifest = Import-PowerShellDataFile -LiteralPath $manifestPath
         $manifest.PrivateData.PSData.ReleaseNotes | Should -BeExactly 'new notes'
         $manifest.ModuleVersion | Should -BeExactly '1.0.0'
+        Get-Content -LiteralPath $manifestPath -Raw | Should -BeExactly (@(
+                "@{ ModuleVersion = '1.0.0'"
+                '    PrivateData = @{'
+                '        PSData = @{'
+                "            ReleaseNotes = @'"
+                'new notes'
+                "'@"
+                '        }'
+                '    }'
+                '}'
+            ) -join "`n")
     }
 
     It 'preserves UTF-8 without a byte order mark and LF line endings' {
