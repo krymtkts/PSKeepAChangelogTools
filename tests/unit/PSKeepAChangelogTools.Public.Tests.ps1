@@ -81,6 +81,24 @@ Describe 'PSKeepAChangelogTools public API' {
         $sections[1].Version | Should -BeExactly '1.1.2'
     }
 
+    It 'rejects changelog footer links without a separator through the public command' {
+        $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
+        @(
+            '# Changelog'
+            ''
+            '## [Unreleased]'
+            ''
+            '### Added'
+            ''
+            '- Add thing'
+            ''
+            '[Unreleased]: https://example.test/commits/main'
+        ) -join "`n" | Set-Content -LiteralPath $changelogPath -NoNewline
+
+        { Get-KeepAChangelogSection -Path $changelogPath } |
+            Should -Throw 'Changelog footer link definitions require a preceding --- separator.'
+    }
+
     It 'reads a changelog section through the public command' {
         $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
         (& $script:NewTestChangelogContent) | Set-Content -LiteralPath $changelogPath -NoNewline
