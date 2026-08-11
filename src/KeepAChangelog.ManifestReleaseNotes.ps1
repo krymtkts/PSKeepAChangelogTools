@@ -59,7 +59,7 @@ function Get-KeepAChangelogManifestNewLine {
         return $match.Value
     }
 
-    Get-KeepAChangelogNewLine
+    $script:KeepAChangelogNewLine
 }
 
 function Write-KeepAChangelogManifestFile {
@@ -324,7 +324,6 @@ function Get-KeepAChangelogManifestReleaseNotes {
         [string] $FullChangelogUrl
     )
 
-    $newLine = Get-KeepAChangelogNewLine
     $sections = Read-KeepAChangelogSections -Path $Path
     $startIndex = -1
     for ($index = 0; $index -lt $sections.Count; $index++) {
@@ -338,6 +337,7 @@ function Get-KeepAChangelogManifestReleaseNotes {
         throw "Changelog entry not found for version: $Version"
     }
 
+    $newLine = $script:KeepAChangelogNewLine
     $selectedSections = $sections | Select-Object -Skip $startIndex -First $RecentCount
     $sectionTexts = foreach ($section in $selectedSections) {
         @(
