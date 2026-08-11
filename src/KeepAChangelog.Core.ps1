@@ -45,6 +45,43 @@ function Remove-KeepAChangelogFooter {
     }
 }
 
+function Assert-KeepAChangelogFooterSeparator {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [string] $Content
+    )
+
+    $lines = $Content -split '\r?\n'
+    $hasLinkDefinition = $false
+
+    for ($index = $lines.Count - 1; $index -ge 0; $index--) {
+        $line = $lines[$index]
+        if ([string]::IsNullOrWhiteSpace($line)) {
+            continue
+        }
+
+        $linkDefinitionMatch = [System.Text.RegularExpressions.Regex]::Match(
+            $line,
+            '^\[[^\]\r\n]+\]:[ \t]*\S.*$'
+        )
+        if (-not $linkDefinitionMatch.Success) {
+            if ($line -match '^---[ \t]*$') {
+                return
+            }
+
+            break
+        }
+
+        $hasLinkDefinition = $true
+    }
+
+    if ($hasLinkDefinition) {
+        throw 'Changelog footer link definitions require a preceding --- separator.'
+    }
+}
+
 function Read-KeepAChangelogSections {
     [CmdletBinding()]
     [OutputType([object[]])]
@@ -58,7 +95,9 @@ function Read-KeepAChangelogSections {
         throw "Changelog not found: $Path"
     }
 
-    $content = Remove-KeepAChangelogFooter -Content (Get-Content -LiteralPath $Path -Raw)
+    $rawContent = Get-Content -LiteralPath $Path -Raw
+    Assert-KeepAChangelogFooterSeparator -Content $rawContent
+    $content = Remove-KeepAChangelogFooter -Content $rawContent
     $headerPattern = '(?m)^## \[(?<Name>[^\]]+)\](?<Suffix>(?: - .+)?)\r?$'
     $headerMatches = [System.Text.RegularExpressions.Regex]::Matches($content, $headerPattern)
     $sections = [System.Collections.Generic.List[object]]::new()

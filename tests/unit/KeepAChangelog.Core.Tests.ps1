@@ -158,6 +158,43 @@ Describe 'Read-KeepAChangelogSections' {
                 ' [Unreleased]: https://example.test/commits/main'
             ) -join "`n")
     }
+
+    It 'rejects terminal general reference link definitions without a separator' {
+        $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
+        @(
+            '# Changelog'
+            ''
+            '## [Unreleased]'
+            ''
+            'See [documentation] for details.'
+            ''
+            '[documentation]: https://example.test/docs'
+        ) -join "`n" | Set-Content -LiteralPath $changelogPath -NoNewline
+
+        { Read-KeepAChangelogSections -Path $changelogPath } |
+            Should -Throw 'Changelog footer link definitions require a preceding --- separator.'
+    }
+
+    It 'reads a changelog without footer links' {
+        $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
+        @(
+            '# Changelog'
+            ''
+            '## [Unreleased]'
+            ''
+            '### Added'
+            ''
+            '- Add thing'
+        ) -join "`n" | Set-Content -LiteralPath $changelogPath -NoNewline
+
+        $section = Read-KeepAChangelogSections -Path $changelogPath
+
+        $section.Body | Should -BeExactly (@(
+                '### Added'
+                ''
+                '- Add thing'
+            ) -join "`n")
+    }
 }
 
 Describe 'Find-KeepAChangelogSection' {
