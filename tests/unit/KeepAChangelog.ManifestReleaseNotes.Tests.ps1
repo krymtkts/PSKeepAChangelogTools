@@ -42,6 +42,92 @@ BeforeAll {
             '[Unreleased]: https://github.com/krymtkts/pslrm/commits/main'
         ) -join "`n"
     }
+
+    $script:WriteTestManifest = {
+        param(
+            [string] $Path,
+            [string] $Content,
+            [System.Text.Encoding] $Encoding,
+            [bool] $IncludeByteOrderMark
+        )
+
+        $contentBytes = $Encoding.GetBytes($Content)
+        [byte[]] $byteOrderMark = [byte[]]::new(0)
+        if ($IncludeByteOrderMark) {
+            $byteOrderMark = $Encoding.GetPreamble()
+        }
+        $fileBytes = [byte[]]::new($byteOrderMark.Length + $contentBytes.Length)
+        if ($byteOrderMark.Length -gt 0) {
+            [System.Buffer]::BlockCopy($byteOrderMark, 0, $fileBytes, 0, $byteOrderMark.Length)
+        }
+        [System.Buffer]::BlockCopy($contentBytes, 0, $fileBytes, $byteOrderMark.Length, $contentBytes.Length)
+        [System.IO.File]::WriteAllBytes($Path, $fileBytes)
+    }
+
+    $script:AssertTestManifestFormatPreserved = {
+        param(
+            [string] $FileName,
+            [System.Text.Encoding] $Encoding,
+            [bool] $IncludeByteOrderMark,
+            [string] $NewLine
+        )
+
+        $manifestPath = Join-Path $TestDrive $FileName
+        $manifestContent = @(
+            '@{'
+            "    Copyright = '©'"
+            '    PrivateData = @{'
+            '        PSData = @{'
+            '            # ReleaseNotes of this module'
+            "            ReleaseNotes = ''"
+            ''
+            '            # Prerelease string of this module'
+            "            Prerelease = 'alpha'"
+            '        }'
+            '    }'
+            '}'
+        ) -join $NewLine
+        & $script:WriteTestManifest -Path $manifestPath -Content $manifestContent -Encoding $Encoding -IncludeByteOrderMark $IncludeByteOrderMark
+
+        $releaseNotes = @(
+            '### Added'
+            ''
+            '- Add thing'
+        ) -join "`n"
+        $expectedReleaseNotes = $releaseNotes -replace "`n", $NewLine
+
+        Set-KeepAChangelogManifestReleaseNotes -ManifestPath $manifestPath -ReleaseNotes $releaseNotes
+
+        $updatedBytes = [System.IO.File]::ReadAllBytes($manifestPath)
+        [byte[]] $expectedByteOrderMark = [byte[]]::new(0)
+        if ($IncludeByteOrderMark) {
+            $expectedByteOrderMark = $Encoding.GetPreamble()
+        }
+        if ($expectedByteOrderMark.Length -gt 0) {
+            [System.BitConverter]::ToString($updatedBytes, 0, $expectedByteOrderMark.Length) |
+                Should -BeExactly ([System.BitConverter]::ToString($expectedByteOrderMark))
+        }
+        else {
+            $updatedBytes[0] | Should -Be ($Encoding.GetBytes('@')[0])
+        }
+
+        $updatedText = $Encoding.GetString(
+            $updatedBytes,
+            $expectedByteOrderMark.Length,
+            $updatedBytes.Length - $expectedByteOrderMark.Length
+        )
+        if ($NewLine -eq "`r`n") {
+            ($updatedText -replace "`r`n", '') | Should -Not -Match '[\r\n]'
+        }
+        else {
+            $updatedText | Should -Not -Match "`r"
+            $updatedText | Should -Match "`n"
+        }
+
+        $updatedText | Should -Match "Copyright = '©'"
+        $manifest = Import-PowerShellDataFile -LiteralPath $manifestPath
+        $manifest.PrivateData.PSData.ReleaseNotes | Should -BeExactly $expectedReleaseNotes
+    }
 }
 
 Describe 'Get-KeepAChangelogManifestReleaseNotes' {
@@ -191,5 +277,50 @@ Describe 'Set-KeepAChangelogManifestReleaseNotes' {
 
         $manifest.PrivateData.PSData.ReleaseNotes | Should -BeExactly $releaseNotes
         $manifestText | Should -Not -Match 'old line'
+    }
+
+    It 'preserves UTF-8 without a byte order mark and LF line endings' {
+        & $script:AssertTestManifestFormatPreserved `
+            -FileName 'utf8-no-bom-lf.psd1' `
+            -Encoding ([System.Text.UTF8Encoding]::new($false, $true)) `
+            -IncludeByteOrderMark $false `
+            -NewLine "`n"
+    }
+
+    It 'preserves UTF-8 with a byte order mark and CRLF line endings' {
+        & $script:AssertTestManifestFormatPreserved `
+            -FileName 'utf8-bom-crlf.psd1' `
+            -Encoding ([System.Text.UTF8Encoding]::new($true, $true)) `
+            -IncludeByteOrderMark $true `
+            -NewLine "`r`n"
+    }
+
+    It 'preserves UTF-16 little-endian encoding and LF line endings' {
+        & $script:AssertTestManifestFormatPreserved `
+            -FileName 'utf16-le-lf.psd1' `
+            -Encoding ([System.Text.UnicodeEncoding]::new($false, $true, $true)) `
+            -IncludeByteOrderMark $true `
+            -NewLine "`n"
+    }
+
+    It 'preserves UTF-16 big-endian encoding and CRLF line endings' {
+        & $script:AssertTestManifestFormatPreserved `
+            -FileName 'utf16-be-crlf.psd1' `
+            -Encoding ([System.Text.UnicodeEncoding]::new($true, $true, $true)) `
+            -IncludeByteOrderMark $true `
+            -NewLine "`r`n"
+    }
+
+    It 'rejects invalid UTF-8 without changing the manifest bytes' {
+        $manifestPath = Join-Path $TestDrive 'invalid-utf8.psd1'
+        $invalidBytes = [byte[]] @(0xC3, 0x28)
+        [System.IO.File]::WriteAllBytes($manifestPath, $invalidBytes)
+
+        {
+            Set-KeepAChangelogManifestReleaseNotes -ManifestPath $manifestPath -ReleaseNotes 'new notes'
+        } | Should -Throw 'Could not decode manifest using a supported encoding:*'
+
+        [System.BitConverter]::ToString([System.IO.File]::ReadAllBytes($manifestPath)) |
+            Should -BeExactly ([System.BitConverter]::ToString($invalidBytes))
     }
 }
