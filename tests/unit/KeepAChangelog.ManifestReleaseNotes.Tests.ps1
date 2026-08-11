@@ -69,13 +69,14 @@ BeforeAll {
             [string] $FileName,
             [System.Text.Encoding] $Encoding,
             [bool] $IncludeByteOrderMark,
-            [string] $NewLine
+            [string] $NewLine,
+            [string] $Copyright
         )
 
         $manifestPath = Join-Path $TestDrive $FileName
         $manifestContent = @(
             '@{'
-            "    Copyright = '©'"
+            "    Copyright = '$Copyright'"
             '    PrivateData = @{'
             '        PSData = @{'
             '            # ReleaseNotes of this module'
@@ -124,7 +125,7 @@ BeforeAll {
             $updatedText | Should -Match "`n"
         }
 
-        $updatedText | Should -Match "Copyright = '©'"
+        $updatedText | Should -Match ([regex]::Escape("Copyright = '$Copyright'"))
         $manifest = Import-PowerShellDataFile -LiteralPath $manifestPath
         $manifest.PrivateData.PSData.ReleaseNotes | Should -BeExactly $expectedReleaseNotes
     }
@@ -485,7 +486,8 @@ Describe 'Set-KeepAChangelogManifestReleaseNotes' {
             -FileName 'utf8-no-bom-lf.psd1' `
             -Encoding ([System.Text.UTF8Encoding]::new($false, $true)) `
             -IncludeByteOrderMark $false `
-            -NewLine "`n"
+            -NewLine "`n" `
+            -Copyright '(c)'
     }
 
     It 'preserves UTF-8 with a byte order mark and CRLF line endings' {
@@ -493,7 +495,8 @@ Describe 'Set-KeepAChangelogManifestReleaseNotes' {
             -FileName 'utf8-bom-crlf.psd1' `
             -Encoding ([System.Text.UTF8Encoding]::new($true, $true)) `
             -IncludeByteOrderMark $true `
-            -NewLine "`r`n"
+            -NewLine "`r`n" `
+            -Copyright '(c)'
     }
 
     It 'preserves UTF-16 little-endian encoding and LF line endings' {
@@ -501,7 +504,8 @@ Describe 'Set-KeepAChangelogManifestReleaseNotes' {
             -FileName 'utf16-le-lf.psd1' `
             -Encoding ([System.Text.UnicodeEncoding]::new($false, $true, $true)) `
             -IncludeByteOrderMark $true `
-            -NewLine "`n"
+            -NewLine "`n" `
+            -Copyright '(c)'
     }
 
     It 'preserves UTF-16 big-endian encoding and CRLF line endings' {
@@ -509,7 +513,19 @@ Describe 'Set-KeepAChangelogManifestReleaseNotes' {
             -FileName 'utf16-be-crlf.psd1' `
             -Encoding ([System.Text.UnicodeEncoding]::new($true, $true, $true)) `
             -IncludeByteOrderMark $true `
-            -NewLine "`r`n"
+            -NewLine "`r`n" `
+            -Copyright '(c)'
+    }
+
+    # NOTE: Windows PowerShell may misinterpret non-ASCII UTF-8 text without a byte order mark.
+    # https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_character_encoding#the-byte-order-mark
+    It 'preserves non-ASCII UTF-8 without a byte order mark on PowerShell 7' -Skip:($PSVersionTable.PSVersion.Major -lt 7) {
+        & $script:AssertTestManifestFormatPreserved `
+            -FileName 'utf8-no-bom-non-ascii.psd1' `
+            -Encoding ([System.Text.UTF8Encoding]::new($false, $true)) `
+            -IncludeByteOrderMark $false `
+            -NewLine "`n" `
+            -Copyright '©'
     }
 
     It 'rejects invalid UTF-8 without changing the manifest bytes' {
