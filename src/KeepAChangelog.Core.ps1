@@ -8,6 +8,43 @@ function Resolve-KeepAChangelogPath {
     Join-Path (Get-Location) 'CHANGELOG.md'
 }
 
+function Remove-KeepAChangelogFooter {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [string] $Content
+    )
+
+    $separatorMatches = [System.Text.RegularExpressions.Regex]::Matches($Content, '(?m)^---[ \t]*\r?$')
+    if ($separatorMatches.Count -eq 0) {
+        return $Content
+    }
+
+    $separatorMatch = $separatorMatches[$separatorMatches.Count - 1]
+    $footerText = $Content.Substring($separatorMatch.Index + $separatorMatch.Length).TrimStart("`r", "`n")
+    $hasLinkDefinition = $false
+
+    foreach ($line in ($footerText -split '\r?\n')) {
+        if ([string]::IsNullOrWhiteSpace($line)) {
+            continue
+        }
+        if ($line -notmatch '^\[[^\]\r\n]+\]:[ \t]*\S.*$') {
+            return $Content
+        }
+
+        $hasLinkDefinition = $true
+    }
+
+    if ($hasLinkDefinition) {
+        $Content.Substring(0, $separatorMatch.Index)
+    }
+    else {
+        $Content
+    }
+}
+
 function Read-KeepAChangelogSections {
     [CmdletBinding()]
     [OutputType([object[]])]
@@ -21,7 +58,7 @@ function Read-KeepAChangelogSections {
         throw "Changelog not found: $Path"
     }
 
-    $content = Get-Content -LiteralPath $Path -Raw
+    $content = Remove-KeepAChangelogFooter -Content (Get-Content -LiteralPath $Path -Raw)
     $headerPattern = '(?m)^## \[(?<Name>[^\]]+)\](?<Suffix>(?: - .+)?)\r?$'
     $headerMatches = [System.Text.RegularExpressions.Regex]::Matches($content, $headerPattern)
     $sections = [System.Collections.Generic.List[object]]::new()
@@ -36,10 +73,6 @@ function Read-KeepAChangelogSections {
         }
 
         $rawBody = $content.Substring($bodyStartIndex, $bodyEndIndex - $bodyStartIndex).TrimStart("`r", "`n")
-        $footerMatch = [System.Text.RegularExpressions.Regex]::Match($rawBody, '(?m)^---\s*\r?$')
-        if ($footerMatch.Success) {
-            $rawBody = $rawBody.Substring(0, $footerMatch.Index)
-        }
 
         $sections.Add([pscustomobject]@{
                 Version = $headerMatch.Groups['Name'].Value

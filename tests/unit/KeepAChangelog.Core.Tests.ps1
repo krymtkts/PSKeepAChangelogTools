@@ -58,6 +58,106 @@ Describe 'Read-KeepAChangelogSections' {
                 'CCC'
             ) -join "`n")
     }
+
+    It 'keeps horizontal rules inside section bodies when a terminal footer exists' {
+        $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
+        @(
+            '# Changelog'
+            ''
+            '## [Unreleased]'
+            ''
+            '### Changed'
+            ''
+            '- Before the rule'
+            ''
+            '---'
+            ''
+            '- After the rule'
+            ''
+            '## [1.0.0] - 2026-08-11'
+            ''
+            '### Added'
+            ''
+            '- Initial release'
+            ''
+            '---'
+            ''
+            '[Unreleased]: https://example.test/compare/v1.0.0...HEAD'
+            '[1.0.0]: https://example.test/releases/v1.0.0'
+        ) -join "`n" | Set-Content -LiteralPath $changelogPath -NoNewline
+
+        $sections = Read-KeepAChangelogSections -Path $changelogPath
+
+        $sections[0].Body | Should -BeExactly (@(
+                '### Changed'
+                ''
+                '- Before the rule'
+                ''
+                '---'
+                ''
+                '- After the rule'
+            ) -join "`n")
+        $sections[1].Body | Should -BeExactly (@(
+                '### Added'
+                ''
+                '- Initial release'
+            ) -join "`n")
+    }
+
+    It 'separates a terminal footer with CRLF line endings' {
+        $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
+        $content = @(
+            '# Changelog'
+            ''
+            '## [Unreleased]'
+            ''
+            '### Added'
+            ''
+            '- Add thing'
+            ''
+            '---'
+            ''
+            '[Unreleased]: https://example.test/commits/main'
+        ) -join "`r`n"
+        [System.IO.File]::WriteAllText($changelogPath, $content)
+
+        $section = Read-KeepAChangelogSections -Path $changelogPath
+
+        $section.Body | Should -BeExactly (@(
+                '### Added'
+                ''
+                '- Add thing'
+            ) -join "`r`n")
+    }
+
+    It 'does not treat an indented link definition as a terminal footer' {
+        $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
+        @(
+            '# Changelog'
+            ''
+            '## [Unreleased]'
+            ''
+            '### Added'
+            ''
+            '- Add thing'
+            ''
+            '---'
+            ''
+            ' [Unreleased]: https://example.test/commits/main'
+        ) -join "`n" | Set-Content -LiteralPath $changelogPath -NoNewline
+
+        $section = Read-KeepAChangelogSections -Path $changelogPath
+
+        $section.Body | Should -BeExactly (@(
+                '### Added'
+                ''
+                '- Add thing'
+                ''
+                '---'
+                ''
+                ' [Unreleased]: https://example.test/commits/main'
+            ) -join "`n")
+    }
 }
 
 Describe 'Find-KeepAChangelogSection' {
@@ -126,4 +226,3 @@ Describe 'ConvertFrom-ReleaseTagToVersion' {
             Should -Throw 'Release tag must use the form v<version>: 1.1.2'
     }
 }
-
