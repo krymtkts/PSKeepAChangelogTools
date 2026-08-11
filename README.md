@@ -8,8 +8,21 @@ It treats `CHANGELOG.md` as the source of truth and supports:
 
 - changelog parsing and validation
 - release note extraction for automation
-- optional PowerShell-specific helpers such as module manifest `ReleaseNotes`
-  synchronization
+- PowerShell module manifest `ReleaseNotes` synchronization
+
+## Installation
+
+Install from the PowerShell Gallery with PSResourceGet:
+
+```powershell
+Install-PSResource -Name PSKeepAChangelogTools -Repository PSGallery
+```
+
+Windows PowerShell 5.1 users can install with PowerShellGet:
+
+```powershell
+Install-Module -Name PSKeepAChangelogTools -Repository PSGallery
+```
 
 ## Public commands
 
@@ -33,12 +46,37 @@ This module follows Keep a Changelog style, but it does not enforce every part o
   The module recommends an explicit `---` separator.
   This keeps footer editing automation-safe.
 
-## Planned scope
+## Usage
 
-- Parse Keep a Changelog sections such as `Unreleased` and versioned releases.
-- Check release metadata against changelog content.
-- Render release notes for GitHub releases and tag messages.
-- Synchronize derived release notes into PowerShell module manifests.
+Read all sections, one section, or one section body:
+
+```powershell
+Get-KeepAChangelogSection
+Get-KeepAChangelogSection -Version '1.0.0'
+Get-KeepAChangelogEntry -ReleaseTag 'v1.0.0'
+```
+
+Check that a version exists and optionally matches a release tag:
+
+```powershell
+Assert-KeepAChangelogReleaseMetadata -Version '1.0.0' -ReleaseTag 'v1.0.0'
+```
+
+Render recent sections and write them to a PowerShell module manifest:
+
+```powershell
+$releaseNotes = Get-KeepAChangelogManifestReleaseNotes `
+    -Version '1.0.0' `
+    -RecentCount 3 `
+    -FullChangelogUrl 'https://github.com/example/project/blob/main/CHANGELOG.md'
+
+Set-KeepAChangelogManifestReleaseNotes `
+    -ManifestPath './Example.psd1' `
+    -ReleaseNotes $releaseNotes
+```
+
+Commands that accept `-Path` use `CHANGELOG.md` in the current directory by default.
+`Set-KeepAChangelogManifestReleaseNotes` requires `-ManifestPath`.
 
 ## Development
 
