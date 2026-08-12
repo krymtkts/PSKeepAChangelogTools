@@ -528,6 +528,52 @@ Describe 'Set-KeepAChangelogManifestReleaseNotes' {
             -Copyright '©'
     }
 
+    It 'rejects a here-string terminator without changing the manifest bytes' {
+        $manifestPath = Join-Path $TestDrive 'invalid-release-notes.psd1'
+        @(
+            '@{'
+            '    PrivateData = @{'
+            '        PSData = @{'
+            "            ReleaseNotes = ''"
+            '        }'
+            '    }'
+            '}'
+        ) -join "`n" | Set-Content -LiteralPath $manifestPath -NoNewline
+        $originalBytes = [System.IO.File]::ReadAllBytes($manifestPath)
+        $releaseNotes = @(
+            '### Added'
+            "'@"
+            '- Invalid here-string content'
+        ) -join "`n"
+
+        {
+            Set-KeepAChangelogManifestReleaseNotes -ManifestPath $manifestPath -ReleaseNotes $releaseNotes
+        } | Should -Throw 'Could not create a valid manifest from ReleaseNotes:*'
+
+        [System.BitConverter]::ToString([System.IO.File]::ReadAllBytes($manifestPath)) |
+            Should -BeExactly ([System.BitConverter]::ToString($originalBytes))
+    }
+
+    It 'rejects a manifest with syntax errors without changing its bytes' {
+        $manifestPath = Join-Path $TestDrive 'invalid-manifest.psd1'
+        @(
+            '@{'
+            '    PrivateData = @{'
+            '        PSData = @{'
+            "            ReleaseNotes = ''"
+            '        }'
+            '    }'
+        ) -join "`n" | Set-Content -LiteralPath $manifestPath -NoNewline
+        $originalBytes = [System.IO.File]::ReadAllBytes($manifestPath)
+
+        {
+            Set-KeepAChangelogManifestReleaseNotes -ManifestPath $manifestPath -ReleaseNotes 'new notes'
+        } | Should -Throw 'Manifest contains syntax errors:*'
+
+        [System.BitConverter]::ToString([System.IO.File]::ReadAllBytes($manifestPath)) |
+            Should -BeExactly ([System.BitConverter]::ToString($originalBytes))
+    }
+
     It 'rejects invalid UTF-8 without changing the manifest bytes' {
         $manifestPath = Join-Path $TestDrive 'invalid-utf8.psd1'
         $invalidBytes = [byte[]] @(0xC3, 0x28)

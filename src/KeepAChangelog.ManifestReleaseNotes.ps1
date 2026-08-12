@@ -145,6 +145,9 @@ function Get-KeepAChangelogManifestReleaseNotesTarget {
         [ref] $tokens,
         [ref] $parseErrors
     )
+    if ($parseErrors.Count -gt 0) {
+        throw "Manifest contains syntax errors: $($parseErrors[0].Message)"
+    }
     $rootHashtable = $manifestAst.Find(
         { param($ast) $ast -is [System.Management.Automation.Language.HashtableAst] },
         $false
@@ -383,6 +386,16 @@ function Set-KeepAChangelogManifestReleaseNotes {
     }
 
     $updatedContent = $content.Substring(0, $edit.StartOffset) + $edit.Replacement + $content.Substring($edit.EndOffset)
+    $parseTokens = $null
+    $parseErrors = $null
+    $null = [System.Management.Automation.Language.Parser]::ParseInput(
+        $updatedContent,
+        [ref] $parseTokens,
+        [ref] $parseErrors
+    )
+    if ($parseErrors.Count -gt 0) {
+        throw "Could not create a valid manifest from ReleaseNotes: $ManifestPath. $($parseErrors[0].Message)"
+    }
 
     if ($PSCmdlet.ShouldProcess($ManifestPath, 'Update manifest ReleaseNotes')) {
         Write-KeepAChangelogManifestFile -Path $ManifestPath -Content $updatedContent -Encoding $manifestFile.Encoding -ByteOrderMark $manifestFile.ByteOrderMark
