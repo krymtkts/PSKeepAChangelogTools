@@ -239,6 +239,7 @@ Describe 'Set-KeepAChangelogManifestReleaseNotes' {
             ''
             '- Add thing'
         ) -join "`n"
+        $fileCount = @(Get-ChildItem -LiteralPath $TestDrive -File -Force).Count
 
         Set-KeepAChangelogManifestReleaseNotes -ManifestPath $manifestPath -ReleaseNotes $releaseNotes
         $manifest = Import-PowerShellDataFile -Path $manifestPath
@@ -246,6 +247,7 @@ Describe 'Set-KeepAChangelogManifestReleaseNotes' {
 
         $manifest.PrivateData.PSData.ReleaseNotes | Should -BeExactly $releaseNotes
         $manifestText | Should -Not -Match "`r"
+        @(Get-ChildItem -LiteralPath $TestDrive -File -Force).Count | Should -Be $fileCount
     }
 
     It 'replaces a commented ReleaseNotes property without changing surrounding content' {
@@ -526,6 +528,108 @@ Describe 'Set-KeepAChangelogManifestReleaseNotes' {
             -IncludeByteOrderMark $false `
             -NewLine "`n" `
             -Copyright '©'
+    }
+
+    It 'rejects a here-string terminator without changing the manifest bytes' {
+        $manifestPath = Join-Path $TestDrive 'invalid-release-notes.psd1'
+        @(
+            '@{'
+            '    PrivateData = @{'
+            '        PSData = @{'
+            "            ReleaseNotes = ''"
+            '        }'
+            '    }'
+            '}'
+        ) -join "`n" | Set-Content -LiteralPath $manifestPath -NoNewline
+        $originalBytes = [System.IO.File]::ReadAllBytes($manifestPath)
+        $releaseNotes = @(
+            '### Added'
+            "'@"
+            '- Invalid here-string content'
+        ) -join "`n"
+
+        {
+            Set-KeepAChangelogManifestReleaseNotes -ManifestPath $manifestPath -ReleaseNotes $releaseNotes
+        } | Should -Throw 'Could not create a valid manifest from ReleaseNotes:*'
+
+        [System.BitConverter]::ToString([System.IO.File]::ReadAllBytes($manifestPath)) |
+            Should -BeExactly ([System.BitConverter]::ToString($originalBytes))
+    }
+
+    It 'rejects a manifest with syntax errors without changing its bytes' {
+        $manifestPath = Join-Path $TestDrive 'invalid-manifest.psd1'
+        @(
+            '@{'
+            '    PrivateData = @{'
+            '        PSData = @{'
+            "            ReleaseNotes = ''"
+            '        }'
+            '    }'
+        ) -join "`n" | Set-Content -LiteralPath $manifestPath -NoNewline
+        $originalBytes = [System.IO.File]::ReadAllBytes($manifestPath)
+
+        {
+            Set-KeepAChangelogManifestReleaseNotes -ManifestPath $manifestPath -ReleaseNotes 'new notes'
+        } | Should -Throw 'Manifest contains syntax errors:*'
+
+        [System.BitConverter]::ToString([System.IO.File]::ReadAllBytes($manifestPath)) |
+            Should -BeExactly ([System.BitConverter]::ToString($originalBytes))
+    }
+
+    It 'updates ReleaseNotes when another property contains a dynamic expression' {
+        $manifestPath = Join-Path $TestDrive 'dynamic-expression.psd1'
+        @(
+            '@{'
+            '    PrivateData = @{'
+            '        PSData = @{'
+            "            ReleaseNotes = ''"
+            '        }'
+            '    }'
+            '    Generated = Get-Date'
+            '}'
+        ) -join "`n" | Set-Content -LiteralPath $manifestPath -NoNewline
+        $fileCount = @(Get-ChildItem -LiteralPath $TestDrive -File -Force).Count
+
+        Set-KeepAChangelogManifestReleaseNotes -ManifestPath $manifestPath -ReleaseNotes 'new notes'
+
+        (Get-Content -Raw -LiteralPath $manifestPath) | Should -Match "ReleaseNotes = @'`nnew notes`n'@"
+        @(Get-ChildItem -LiteralPath $TestDrive -File -Force).Count | Should -Be $fileCount
+    }
+
+    It 'keeps the original manifest when updated ReleaseNotes validation fails' {
+        $manifestPath = Join-Path $TestDrive 'mismatched-release-notes.psd1'
+        "@{ PrivateData = @{ PSData = @{ ReleaseNotes = '' } } }" |
+            Set-Content -LiteralPath $manifestPath -NoNewline
+        $originalBytes = [System.IO.File]::ReadAllBytes($manifestPath)
+        $fileCount = @(Get-ChildItem -LiteralPath $TestDrive -File -Force).Count
+        Mock Assert-KeepAChangelogManifestReleaseNotesValue {
+            throw 'Updated manifest ReleaseNotes did not match the requested value'
+        }
+
+        {
+            Set-KeepAChangelogManifestReleaseNotes -ManifestPath $manifestPath -ReleaseNotes 'new notes'
+        } | Should -Throw 'Updated manifest ReleaseNotes did not match the requested value'
+
+        [System.BitConverter]::ToString([System.IO.File]::ReadAllBytes($manifestPath)) |
+            Should -BeExactly ([System.BitConverter]::ToString($originalBytes))
+        @(Get-ChildItem -LiteralPath $TestDrive -File -Force).Count | Should -Be $fileCount
+    }
+
+    It 'does not create another file with WhatIf' {
+        $manifestPath = Join-Path $TestDrive 'what-if.psd1'
+        "@{ PrivateData = @{ PSData = @{ ReleaseNotes = '' } } }" |
+            Set-Content -LiteralPath $manifestPath -NoNewline
+        $originalBytes = [System.IO.File]::ReadAllBytes($manifestPath)
+        $fileCount = @(Get-ChildItem -LiteralPath $TestDrive -File -Force).Count
+
+        Set-KeepAChangelogManifestReleaseNotes `
+            -ManifestPath $manifestPath `
+            -ReleaseNotes 'new notes' `
+            -WhatIf
+
+        [System.BitConverter]::ToString([System.IO.File]::ReadAllBytes($manifestPath)) |
+            Should -BeExactly ([System.BitConverter]::ToString($originalBytes))
+        @(Get-ChildItem -LiteralPath $TestDrive -File -Force).Count | Should -Be $fileCount
     }
 
     It 'rejects invalid UTF-8 without changing the manifest bytes' {

@@ -90,6 +90,43 @@ function Write-KeepAChangelogManifestFile {
     [System.IO.File]::WriteAllBytes($Path, $fileBytes)
 }
 
+function Assert-KeepAChangelogManifestReleaseNotesValue {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [System.Management.Automation.Language.ScriptBlockAst] $ManifestAst,
+
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [string] $ReleaseNotes,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string] $Path
+    )
+
+    $rootHashtable = $ManifestAst.Find(
+        { param($ast) $ast -is [System.Management.Automation.Language.HashtableAst] },
+        $false
+    )
+    $pathResolution = if ($rootHashtable -is [System.Management.Automation.Language.HashtableAst]) {
+        Resolve-KeepAChangelogManifestReleaseNotesPath -HashtableAst $rootHashtable
+    }
+    if ($null -eq $pathResolution -or $null -eq $pathResolution.ValueAst) {
+        throw "Could not validate PrivateData.PSData.ReleaseNotes in updated manifest: $Path"
+    }
+
+    try {
+        $validatedReleaseNotes = $pathResolution.ValueAst.SafeGetValue()
+    }
+    catch {
+        throw "Could not evaluate PrivateData.PSData.ReleaseNotes in updated manifest: $Path. $($_.Exception.Message)"
+    }
+    if ($validatedReleaseNotes -isnot [string] -or $validatedReleaseNotes -cne $ReleaseNotes) {
+        throw "Updated manifest ReleaseNotes did not match the requested value: $Path"
+    }
+}
+
 function Resolve-KeepAChangelogManifestReleaseNotesPath {
     param(
         [Parameter(Mandatory)]
@@ -145,6 +182,9 @@ function Get-KeepAChangelogManifestReleaseNotesTarget {
         [ref] $tokens,
         [ref] $parseErrors
     )
+    if ($parseErrors.Count -gt 0) {
+        throw "Manifest contains syntax errors: $($parseErrors[0].Message)"
+    }
     $rootHashtable = $manifestAst.Find(
         { param($ast) $ast -is [System.Management.Automation.Language.HashtableAst] },
         $false
@@ -383,8 +423,26 @@ function Set-KeepAChangelogManifestReleaseNotes {
     }
 
     $updatedContent = $content.Substring(0, $edit.StartOffset) + $edit.Replacement + $content.Substring($edit.EndOffset)
+    $parseTokens = $null
+    $parseErrors = $null
+    $updatedAst = [System.Management.Automation.Language.Parser]::ParseInput(
+        $updatedContent,
+        [ref] $parseTokens,
+        [ref] $parseErrors
+    )
+    if ($parseErrors.Count -gt 0) {
+        throw "Could not create a valid manifest from ReleaseNotes: $ManifestPath. $($parseErrors[0].Message)"
+    }
+    Assert-KeepAChangelogManifestReleaseNotesValue `
+        -ManifestAst $updatedAst `
+        -ReleaseNotes $normalizedReleaseNotes `
+        -Path $ManifestPath
 
     if ($PSCmdlet.ShouldProcess($ManifestPath, 'Update manifest ReleaseNotes')) {
-        Write-KeepAChangelogManifestFile -Path $ManifestPath -Content $updatedContent -Encoding $manifestFile.Encoding -ByteOrderMark $manifestFile.ByteOrderMark
+        Write-KeepAChangelogManifestFile `
+            -Path $ManifestPath `
+            -Content $updatedContent `
+            -Encoding $manifestFile.Encoding `
+            -ByteOrderMark $manifestFile.ByteOrderMark
     }
 }
