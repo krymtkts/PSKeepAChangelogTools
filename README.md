@@ -104,6 +104,11 @@ Set-KeepAChangelogManifestReleaseNotes `
 
 Commands that accept `-Path` use `CHANGELOG.md` in the current directory by default.
 `Set-KeepAChangelogManifestReleaseNotes` requires `-ManifestPath`.
+It replaces an existing value or activates a single commented `ReleaseNotes` placeholder.
+It adds the missing path when the property does not exist.
+Text outside the edited range remains unchanged.
+This includes comments, empty lines, and property order.
+The manifest encoding, byte order mark, and line endings are also preserved.
 
 ## Development
 
