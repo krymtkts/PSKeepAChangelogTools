@@ -195,6 +195,125 @@ Describe 'Read-KeepAChangelogSections' {
                 '- Add thing'
             ) -join "`n")
     }
+
+    It 'ignores headings inside backtick fenced code blocks' {
+        $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
+        @(
+            '# Changelog'
+            ''
+            '## [Unreleased]'
+            ''
+            '### Changed'
+            ''
+            '```markdown'
+            '## [1.0.0] - 2026-08-12'
+            '```'
+            ''
+            '- Keep parsing after the example.'
+            ''
+            '## [1.0.0] - 2026-08-12'
+            ''
+            '### Added'
+            ''
+            '- Initial release.'
+        ) -join "`n" | Set-Content -LiteralPath $changelogPath -NoNewline
+
+        $sections = Read-KeepAChangelogSections -Path $changelogPath
+
+        $sections.Count | Should -Be 2
+        $sections[0].Body | Should -BeExactly (@(
+                '### Changed'
+                ''
+                '```markdown'
+                '## [1.0.0] - 2026-08-12'
+                '```'
+                ''
+                '- Keep parsing after the example.'
+            ) -join "`n")
+        $sections[1].Version | Should -BeExactly '1.0.0'
+    }
+
+    It 'requires a matching tilde fence of at least the opening length' {
+        $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
+        $content = @(
+            '# Changelog'
+            ''
+            '## [Unreleased]'
+            ''
+            '   ~~~~ markdown'
+            '## [first-example]'
+            '   ~~~'
+            '   ```'
+            '## [second-example]'
+            '   ~~~~'
+            ''
+            '## [1.0.0] - 2026-08-12'
+            ''
+            '- Initial release.'
+        ) -join "`r`n"
+        [System.IO.File]::WriteAllText($changelogPath, $content)
+
+        $sections = Read-KeepAChangelogSections -Path $changelogPath
+
+        $sections.Count | Should -Be 2
+        $sections[0].Body | Should -BeExactly (@(
+                '   ~~~~ markdown'
+                '## [first-example]'
+                '   ~~~'
+                '   ```'
+                '## [second-example]'
+                '   ~~~~'
+            ) -join "`r`n")
+        $sections[1].Version | Should -BeExactly '1.0.0'
+    }
+
+    It 'rejects an unclosed fenced code block' {
+        $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
+        @(
+            '# Changelog'
+            ''
+            '## [Unreleased]'
+            ''
+            '```powershell'
+            '## [example]'
+        ) -join "`n" | Set-Content -LiteralPath $changelogPath -NoNewline
+
+        { Read-KeepAChangelogSections -Path $changelogPath } |
+            Should -Throw 'Unclosed changelog code fence starting at line 5.'
+    }
+
+    It 'rejects duplicate versions with both line numbers' {
+        $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
+        @(
+            '# Changelog'
+            ''
+            '## [1.0.0] - 2026-08-12'
+            ''
+            '- First entry.'
+            ''
+            '## [1.0.0] - 2026-08-11'
+        ) -join "`n" | Set-Content -LiteralPath $changelogPath -NoNewline
+
+        { Read-KeepAChangelogSections -Path $changelogPath } |
+            Should -Throw "Duplicate changelog version '1.0.0' at lines 3 and 7."
+    }
+
+    It 'rejects versions that differ only by case with CRLF line endings' {
+        $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
+        $content = @(
+            '# Changelog'
+            ''
+            '## [Unreleased]'
+            ''
+            '- First entry.'
+            ''
+            '## [unreleased]'
+        ) -join "`r`n"
+        [System.IO.File]::WriteAllText($changelogPath, $content)
+
+        { Read-KeepAChangelogSections -Path $changelogPath } |
+            Should -Throw "Duplicate changelog version 'unreleased' at lines 3 and 7."
+    }
 }
 
 Describe 'Find-KeepAChangelogSection' {

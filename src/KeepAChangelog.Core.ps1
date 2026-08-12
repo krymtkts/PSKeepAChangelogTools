@@ -82,6 +82,82 @@ function Assert-KeepAChangelogFooterSeparator {
     }
 }
 
+function Get-KeepAChangelogSectionHeaders {
+    [CmdletBinding()]
+    [OutputType([object[]])]
+    param(
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [string] $Content
+    )
+
+    $linePattern = '(?m)^(?<Text>[^\r\n]*)(?<NewLine>\r?\n|$)'
+    $headerPattern = '^## \[(?<Name>[^\]]+)\](?: - .+)?$'
+    $fencePattern = '^ {0,3}(?<Marker>`{3,}|~{3,})(?<Tail>.*)$'
+    $headers = [System.Collections.Generic.List[object]]::new()
+    $versionLines = @{}
+    $fenceMarker = $null
+    $fenceLength = 0
+    $fenceStartLine = 0
+    $lineNumber = 0
+
+    foreach ($lineMatch in [System.Text.RegularExpressions.Regex]::Matches($Content, $linePattern)) {
+        $lineNumber++
+        $line = $lineMatch.Groups['Text'].Value
+        $fenceMatch = [System.Text.RegularExpressions.Regex]::Match($line, $fencePattern)
+
+        if ($null -ne $fenceMarker) {
+            $marker = $fenceMatch.Groups['Marker'].Value
+            $tail = $fenceMatch.Groups['Tail'].Value
+            if (
+                $fenceMatch.Success -and
+                $marker[0] -eq $fenceMarker -and
+                $marker.Length -ge $fenceLength -and
+                $tail.Trim([char[]] " `t").Length -eq 0
+            ) {
+                $fenceMarker = $null
+            }
+
+            continue
+        }
+
+        if ($fenceMatch.Success) {
+            $marker = $fenceMatch.Groups['Marker'].Value
+            $fenceMarker = $marker[0]
+            $fenceLength = $marker.Length
+            $fenceStartLine = $lineNumber
+            continue
+        }
+
+        $headerMatch = [System.Text.RegularExpressions.Regex]::Match($line, $headerPattern)
+        if ($headerMatch.Success) {
+            $version = $headerMatch.Groups['Name'].Value
+            if ($versionLines.ContainsKey($version)) {
+                throw "Duplicate changelog version '$version' at lines $($versionLines[$version]) and $lineNumber."
+            }
+            $versionLines[$version] = $lineNumber
+
+            $headerLength = $line.Length
+            if ($lineMatch.Groups['NewLine'].Value.StartsWith("`r")) {
+                $headerLength++
+            }
+
+            $headers.Add([pscustomobject]@{
+                    Index = $lineMatch.Index
+                    Length = $headerLength
+                    Version = $version
+                    Heading = $line
+                })
+        }
+    }
+
+    if ($null -ne $fenceMarker) {
+        throw "Unclosed changelog code fence starting at line $fenceStartLine."
+    }
+
+    $headers.ToArray()
+}
+
 function Read-KeepAChangelogSections {
     [CmdletBinding()]
     [OutputType([object[]])]
@@ -98,24 +174,23 @@ function Read-KeepAChangelogSections {
     $rawContent = Get-Content -LiteralPath $Path -Raw
     Assert-KeepAChangelogFooterSeparator -Content $rawContent
     $content = Remove-KeepAChangelogFooter -Content $rawContent
-    $headerPattern = '(?m)^## \[(?<Name>[^\]]+)\](?<Suffix>(?: - .+)?)\r?$'
-    $headerMatches = [System.Text.RegularExpressions.Regex]::Matches($content, $headerPattern)
+    $headers = @(Get-KeepAChangelogSectionHeaders -Content $content)
     $sections = [System.Collections.Generic.List[object]]::new()
 
-    for ($index = 0; $index -lt $headerMatches.Count; $index++) {
-        $headerMatch = $headerMatches[$index]
-        $bodyStartIndex = $headerMatch.Index + $headerMatch.Length
+    for ($index = 0; $index -lt $headers.Count; $index++) {
+        $header = $headers[$index]
+        $bodyStartIndex = $header.Index + $header.Length
         $bodyEndIndex = $content.Length
 
-        if ($index + 1 -lt $headerMatches.Count) {
-            $bodyEndIndex = $headerMatches[$index + 1].Index
+        if ($index + 1 -lt $headers.Count) {
+            $bodyEndIndex = $headers[$index + 1].Index
         }
 
         $rawBody = $content.Substring($bodyStartIndex, $bodyEndIndex - $bodyStartIndex).TrimStart("`r", "`n")
 
         $sections.Add([pscustomobject]@{
-                Version = $headerMatch.Groups['Name'].Value
-                Heading = $headerMatch.Value.TrimEnd("`r", "`n")
+                Version = $header.Version
+                Heading = $header.Heading
                 Body = $rawBody.TrimEnd("`r", "`n")
             })
     }
