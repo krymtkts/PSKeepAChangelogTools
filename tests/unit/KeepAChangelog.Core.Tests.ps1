@@ -206,7 +206,7 @@ Describe 'Read-KeepAChangelogSections' {
             '### Changed'
             ''
             '```markdown'
-            '## [example] - 2026-08-12'
+            '## [1.0.0] - 2026-08-12'
             '```'
             ''
             '- Keep parsing after the example.'
@@ -225,7 +225,7 @@ Describe 'Read-KeepAChangelogSections' {
                 '### Changed'
                 ''
                 '```markdown'
-                '## [example] - 2026-08-12'
+                '## [1.0.0] - 2026-08-12'
                 '```'
                 ''
                 '- Keep parsing after the example.'
@@ -280,6 +280,39 @@ Describe 'Read-KeepAChangelogSections' {
 
         { Read-KeepAChangelogSections -Path $changelogPath } |
             Should -Throw 'Unclosed changelog code fence starting at line 5.'
+    }
+
+    It 'rejects duplicate versions with both line numbers' {
+        $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
+        @(
+            '# Changelog'
+            ''
+            '## [1.0.0] - 2026-08-12'
+            ''
+            '- First entry.'
+            ''
+            '## [1.0.0] - 2026-08-11'
+        ) -join "`n" | Set-Content -LiteralPath $changelogPath -NoNewline
+
+        { Read-KeepAChangelogSections -Path $changelogPath } |
+            Should -Throw "Duplicate changelog version '1.0.0' at lines 3 and 7."
+    }
+
+    It 'rejects versions that differ only by case with CRLF line endings' {
+        $changelogPath = Join-Path $TestDrive 'CHANGELOG.md'
+        $content = @(
+            '# Changelog'
+            ''
+            '## [Unreleased]'
+            ''
+            '- First entry.'
+            ''
+            '## [unreleased]'
+        ) -join "`r`n"
+        [System.IO.File]::WriteAllText($changelogPath, $content)
+
+        { Read-KeepAChangelogSections -Path $changelogPath } |
+            Should -Throw "Duplicate changelog version 'unreleased' at lines 3 and 7."
     }
 }
 

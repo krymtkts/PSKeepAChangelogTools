@@ -95,6 +95,7 @@ function Get-KeepAChangelogSectionHeaders {
     $headerPattern = '^## \[(?<Name>[^\]]+)\](?: - .+)?$'
     $fencePattern = '^ {0,3}(?<Marker>`{3,}|~{3,})(?<Tail>.*)$'
     $headers = [System.Collections.Generic.List[object]]::new()
+    $versionLines = @{}
     $fenceMarker = $null
     $fenceLength = 0
     $fenceStartLine = 0
@@ -130,6 +131,12 @@ function Get-KeepAChangelogSectionHeaders {
 
         $headerMatch = [System.Text.RegularExpressions.Regex]::Match($line, $headerPattern)
         if ($headerMatch.Success) {
+            $version = $headerMatch.Groups['Name'].Value
+            if ($versionLines.ContainsKey($version)) {
+                throw "Duplicate changelog version '$version' at lines $($versionLines[$version]) and $lineNumber."
+            }
+            $versionLines[$version] = $lineNumber
+
             $headerLength = $line.Length
             if ($lineMatch.Groups['NewLine'].Value.StartsWith("`r")) {
                 $headerLength++
@@ -138,7 +145,7 @@ function Get-KeepAChangelogSectionHeaders {
             $headers.Add([pscustomobject]@{
                     Index = $lineMatch.Index
                     Length = $headerLength
-                    Version = $headerMatch.Groups['Name'].Value
+                    Version = $version
                     Heading = $line
                 })
         }
