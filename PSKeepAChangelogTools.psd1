@@ -12,7 +12,7 @@
     RootModule = 'PSKeepAChangelogTools.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.1.0'
+    ModuleVersion = '0.2.0'
 
     # Supported PSEditions
     CompatiblePSEditions = @('Core', 'Desktop')
@@ -70,7 +70,23 @@
             # ReleaseNotes of this module
 
             ReleaseNotes = @'
-## [0.1.0]
+## [0.2.0] - 2026-08-13
+
+### Added
+
+- Include external help for every public command in the packaged module. Provide a Markdown command reference.
+
+### Changed
+
+- Require a `---` separator before link definitions at the end of `CHANGELOG.md`.
+- Update existing manifest release note values and add a missing `PrivateData.PSData.ReleaseNotes` path. Preserve unrelated text, encoding, byte order marks, and line endings.
+
+### Fixed
+
+- Check existing and generated manifest syntax before writing. Confirm that the generated `PrivateData.PSData.ReleaseNotes` value matches the requested text. Keep the original manifest unchanged if any check fails.
+- Reject duplicate changelog versions while excluding fenced code blocks from section parsing.
+
+## [0.1.0] - 2026-05-23
 
 ### Added
 

@@ -6,6 +6,8 @@ This changelog uses the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-13
+
 ### Added
 
 - Include external help for every public command in the packaged module. Provide a Markdown command reference.
@@ -20,7 +22,7 @@ This changelog uses the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - Check existing and generated manifest syntax before writing. Confirm that the generated `PrivateData.PSData.ReleaseNotes` value matches the requested text. Keep the original manifest unchanged if any check fails.
 - Reject duplicate changelog versions while excluding fenced code blocks from section parsing.
 
-## [0.1.0]
+## [0.1.0] - 2026-05-23
 
 ### Added
 
@@ -40,5 +42,6 @@ This changelog uses the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ---
 
-[Unreleased]: https://github.com/krymtkts/PSKeepAChangelogTools/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/krymtkts/PSKeepAChangelogTools/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/krymtkts/PSKeepAChangelogTools/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/krymtkts/PSKeepAChangelogTools/releases/tag/v0.1.0
