@@ -323,6 +323,7 @@ Task Stage Build, {
 
     Copy-Item -LiteralPath $ModuleManifest.FullName -Destination $PublishModuleManifest -Force
     Copy-Item -LiteralPath $ModuleScript.FullName -Destination (Join-Path $ModulePublishPath $ModuleScript.Name) -Force
+    Copy-Item -LiteralPath $ExternalHelpPath -Destination (Join-Path $ModulePublishPath $ExternalHelpFileName) -Force
     Copy-Item -LiteralPath $ModuleSourcePath -Destination (Join-Path $ModulePublishPath 'src') -Recurse -Force
 }
 
