@@ -6,6 +6,10 @@ This changelog uses the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [Unreleased]
 
+### Added
+
+- Include external help for every public command in the packaged module. Provide a Markdown command reference.
+
 ### Changed
 
 - Require a `---` separator before link definitions at the end of `CHANGELOG.md`.
