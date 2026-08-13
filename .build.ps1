@@ -165,6 +165,21 @@ Task Lint Build, {
         throw 'Invoke-ScriptAnalyzer reported issues.'
     }
 
+    Write-Host 'Validating project changelog.' -ForegroundColor Yellow
+
+    $changelogModule = Import-Module -Name $ModuleManifest.FullName -Force -PassThru
+    try {
+        $changelogValidationCommand = $changelogModule.ExportedCommands['Assert-KeepAChangelogReleaseMetadata']
+        if ($null -eq $changelogValidationCommand) {
+            throw 'Changelog validation command is not exported.'
+        }
+
+        & $changelogValidationCommand -Path $ChangelogPath -Version 'Unreleased'
+    }
+    finally {
+        $changelogModule | Remove-Module -Force
+    }
+
     Write-Host 'Validating external help sources and generated MAML.' -ForegroundColor Yellow
 
     'Import-MarkdownModuleFile' | Assert-CommandAvailable
