@@ -9,7 +9,7 @@
 param(
     [Parameter(Position = 0, ParameterSetName = 'Default')]
     [Parameter(Position = 0, ParameterSetName = 'Publish')]
-    [ValidateSet('Init', 'Clean', 'Build', 'Lint', 'UnitTest', 'IntegrationTest', 'TestAll', 'ReleaseNotes', 'Stage', 'Import', 'ValidateReleaseMetadata', 'ReleaseTestAll', 'ReleaseTag', 'Release')]
+    [ValidateSet('Init', 'Clean', 'Build', 'Lint', 'UnitTest', 'IntegrationTest', 'TestAll', 'UpdateMarkdownHelp', 'ExternalHelp', 'ReleaseNotes', 'Stage', 'Import', 'ValidateReleaseMetadata', 'ReleaseTestAll', 'ReleaseTag', 'Release')]
     [string[]] $Tasks = @('UnitTest'),
 
     [Parameter()]
@@ -84,8 +84,33 @@ $ToolsPath = (Resolve-Path (Join-Path $PSScriptRoot 'tools')).Path
 $ModuleVersion = Import-PowerShellDataFile -Path $ModuleManifest.FullName | Get-FullModuleVersion
 $ModulePublishPath = Join-Path $PSScriptRoot (Join-Path 'publish' $ModuleName)
 $PublishModuleManifest = Join-Path $ModulePublishPath "${ModuleName}.psd1"
+$MarkdownHelpPath = (Resolve-Path (Join-Path $PSScriptRoot (Join-Path 'docs' $ModuleName))).Path
+$ModulePagePath = Join-Path $MarkdownHelpPath "${ModuleName}.md"
+$ExternalHelpFileName = "${ModuleName}-Help.xml"
+$ExternalHelpPath = Join-Path $PSScriptRoot $ExternalHelpFileName
 $FullChangelogUrl = 'https://github.com/krymtkts/PSKeepAChangelogTools/blob/main/CHANGELOG.md'
 $ScriptAnalyzerSettingsPath = Join-Path $PSScriptRoot 'PSScriptAnalyzerSettings.psd1'
+
+function Get-ValidMarkdownCommandHelp {
+    [CmdletBinding()]
+    [OutputType([object[]])]
+    param()
+
+    'Measure-PlatyPSMarkdown', 'Test-MarkdownCommandHelp' | Assert-CommandAvailable
+
+    $help = @(
+        Measure-PlatyPSMarkdown (Join-Path $MarkdownHelpPath '*.md') |
+            Where-Object FileType -Match 'CommandHelp'
+    )
+    $validations = @($help.FilePath | Test-MarkdownCommandHelp -DetailView)
+    $invalid = @($validations | Where-Object { -not $_.IsValid })
+    if ($invalid.Count -gt 0) {
+        $messages = @($invalid.Messages | Where-Object { $_ -notlike 'PASS:*' })
+        throw "Invalid Markdown command help.`n$($messages -join "`n")"
+    }
+
+    $help
+}
 
 # --- Tasks (Invoke-Build) ---
 
@@ -139,6 +164,38 @@ Task Lint Build, {
         $issues
         throw 'Invoke-ScriptAnalyzer reported issues.'
     }
+
+    Write-Host 'Validating external help sources and generated MAML.' -ForegroundColor Yellow
+
+    'Import-MarkdownModuleFile' | Assert-CommandAvailable
+
+    $exportedCommandNames = @((Import-PowerShellDataFile -Path $ModuleManifest.FullName).FunctionsToExport)
+    $markdownCommandNames = @(Get-ValidMarkdownCommandHelp | ForEach-Object Title )
+    $markdownNameDifference = @(Compare-Object -ReferenceObject $exportedCommandNames -DifferenceObject $markdownCommandNames -CaseSensitive)
+    if ($markdownNameDifference.Count -gt 0) {
+        $markdownNameDifference
+        throw 'Markdown command help names do not match FunctionsToExport.'
+    }
+
+    $modulePage = Import-MarkdownModuleFile -LiteralPath $ModulePagePath
+    if ($modulePage.Diagnostics.HadErrors) {
+        $modulePage.Diagnostics.Messages
+        throw 'Invalid Markdown module page.'
+    }
+
+    if (-not (Test-Path -LiteralPath $ExternalHelpPath -PathType Leaf)) {
+        throw "Generated MAML file not found: $ExternalHelpPath"
+    }
+
+    $maml = [xml](Get-Content -LiteralPath $ExternalHelpPath -Raw)
+    $namespaceManager = [System.Xml.XmlNamespaceManager]::new($maml.NameTable)
+    $namespaceManager.AddNamespace('command', 'http://schemas.microsoft.com/maml/dev/command/2004/10')
+    $mamlCommandNames = @($maml.SelectNodes('//command:command/command:details/command:name', $namespaceManager).InnerText)
+    $mamlNameDifference = @(Compare-Object -ReferenceObject $exportedCommandNames -DifferenceObject $mamlCommandNames -CaseSensitive)
+    if ($mamlNameDifference.Count -gt 0) {
+        $mamlNameDifference
+        throw 'MAML command help names do not match FunctionsToExport.'
+    }
 }
 
 Task UnitTest Lint, {
@@ -171,6 +228,53 @@ Task IntegrationTest Stage, {
 }
 
 Task TestAll UnitTest, IntegrationTest
+
+# NOTE: Run after exported command syntax or parameter metadata changes, then review the generated Markdown diff.
+Task UpdateMarkdownHelp Stage, {
+    'Update-MarkdownCommandHelp' | Assert-CommandAvailable
+
+    $publishExternalHelpPath = Join-Path $ModulePublishPath $ExternalHelpFileName
+    if (Test-Path -LiteralPath $publishExternalHelpPath -PathType Leaf) {
+        Remove-Item -LiteralPath $publishExternalHelpPath -Force
+    }
+
+    Remove-Module -Name $ModuleName -Force -ErrorAction SilentlyContinue
+    Import-Module -Name $PublishModuleManifest -Force
+
+    $markdownHelp = Get-ValidMarkdownCommandHelp
+    # NOTE: PlatyPS 1.0.3 reads optional command metadata properties that are absent under StrictMode.
+    Set-StrictMode -Off
+    try {
+        $markdownHelp.FilePath | Update-MarkdownCommandHelp -NoBackup | Out-Null
+    }
+    finally {
+        Set-StrictMode -Version Latest
+    }
+}
+
+# NOTE: Run after reviewing Markdown help to regenerate MAML without modifying the Markdown source.
+Task ExternalHelp {
+    'Import-MarkdownCommandHelp', 'Export-MamlCommandHelp' | Assert-CommandAvailable
+
+    $markdownHelp = Get-ValidMarkdownCommandHelp
+    $generatedHelp = @(
+        $markdownHelp.FilePath |
+            Import-MarkdownCommandHelp |
+            Export-MamlCommandHelp -OutputFolder $PSScriptRoot -Force
+    )
+    if ($generatedHelp.Count -ne 1 -or $generatedHelp[0].Name -ne $ExternalHelpFileName) {
+        throw "Expected one generated MAML file named $ExternalHelpFileName."
+    }
+
+    $generatedHelpDirectory = $generatedHelp[0].Directory.FullName
+    Move-Item -LiteralPath $generatedHelp[0].FullName -Destination $ExternalHelpPath -Force
+    if (
+        $generatedHelpDirectory -ne $PSScriptRoot -and
+        @(Get-ChildItem -LiteralPath $generatedHelpDirectory -Force).Count -eq 0
+    ) {
+        Remove-Item -LiteralPath $generatedHelpDirectory -Force
+    }
+}
 
 Task ReleaseNotes Import, {
     Write-Host 'Syncing module manifest ReleaseNotes from CHANGELOG.md.' -ForegroundColor Yellow
