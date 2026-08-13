@@ -1,0 +1,679 @@
+<?xml version="1.0" encoding="utf-8"?>
+<helpItems xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" schema="maml" xmlns="http://msh">
+  <command:command>
+    <command:details>
+      <command:name>Assert-KeepAChangelogReleaseMetadata</command:name>
+      <maml:description>
+        <maml:para>Check that a changelog version exists and optionally matches a release tag.</maml:para>
+      </maml:description>
+      <command:verb>Assert</command:verb>
+      <command:noun>KeepAChangelogReleaseMetadata</command:noun>
+    </command:details>
+    <maml:description>
+      <maml:para>Checks that the changelog contains the specified version.
+
+When you specify `ReleaseTag`, the command removes an optional `refs/tags/` prefix.
+The tag name must start with `v` and the remaining value must match `Version`.
+The command throws an error when the version is missing or the values do not match.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Assert-KeepAChangelogReleaseMetadata</maml:name>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="0" aliases="none">
+          <maml:name>Path</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+          </dev:type>
+        </command:parameter>
+        <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="1" aliases="none">
+          <maml:name>Version</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+          </dev:type>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="2" aliases="none">
+          <maml:name>ReleaseTag</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+          </dev:type>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="0" aliases="none">
+        <maml:name>Path</maml:name>
+        <maml:description>
+          <maml:para>The path to the changelog.
+The default is `CHANGELOG.md` in the current directory.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.String</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+        </dev:type>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="2" aliases="none">
+        <maml:name>ReleaseTag</maml:name>
+        <maml:description>
+          <maml:para>The release tag to compare with `Version`.
+The accepted forms are `v&lt;version&gt;` and `refs/tags/v&lt;version&gt;`.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.String</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+        </dev:type>
+      </command:parameter>
+      <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="1" aliases="none">
+        <maml:name>Version</maml:name>
+        <maml:description>
+          <maml:para>The changelog version to check.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.String</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+        </dev:type>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes />
+    <command:returnValues />
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para>This command produces no output when validation succeeds.</maml:para>
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>--------- Example 1 ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Assert-KeepAChangelogReleaseMetadata -Version '1.2.0' -ReleaseTag 'refs/tags/v1.2.0'
+```</maml:para>
+          <maml:para>&#x80;</maml:para>
+          <maml:para>Check version `1.2.0` in `CHANGELOG.md` in the current directory.
+The release tag must identify the same version.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>Online Version</maml:linkText>
+        <maml:uri>https://github.com/krymtkts/PSKeepAChangelogTools/blob/main/docs/PSKeepAChangelogTools/Assert-KeepAChangelogReleaseMetadata.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>PSKeepAChangelogTools module</maml:linkText>
+        <maml:uri>https://github.com/krymtkts/PSKeepAChangelogTools/blob/main/docs/PSKeepAChangelogTools/PSKeepAChangelogTools.md</maml:uri>
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+  <command:command>
+    <command:details>
+      <command:name>Get-KeepAChangelogEntry</command:name>
+      <maml:description>
+        <maml:para>Get the body of a changelog section by version or release tag.</maml:para>
+      </maml:description>
+      <command:verb>Get</command:verb>
+      <command:noun>KeepAChangelogEntry</command:noun>
+    </command:details>
+    <maml:description>
+      <maml:para>Reads a Keep a Changelog style file and returns the body of one versioned section.
+The section heading and file-ending footer link definitions are not included.
+
+Specify either `Version` or `ReleaseTag`.
+A release tag can use the form `v&lt;version&gt;` or `refs/tags/v&lt;version&gt;`.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Get-KeepAChangelogEntry</maml:name>
+        <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="named" aliases="none">
+          <maml:name>Version</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+          </dev:type>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="named" aliases="none">
+          <maml:name>Path</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+          </dev:type>
+        </command:parameter>
+      </command:syntaxItem>
+      <command:syntaxItem>
+        <maml:name>Get-KeepAChangelogEntry</maml:name>
+        <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="named" aliases="none">
+          <maml:name>ReleaseTag</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+          </dev:type>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="named" aliases="none">
+          <maml:name>Path</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+          </dev:type>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>Path</maml:name>
+        <maml:description>
+          <maml:para>The path to the changelog.
+The default is `CHANGELOG.md` in the current directory.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.String</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+        </dev:type>
+      </command:parameter>
+      <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>ReleaseTag</maml:name>
+        <maml:description>
+          <maml:para>The release tag used to select a changelog version.
+The accepted forms are `v&lt;version&gt;` and `refs/tags/v&lt;version&gt;`.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.String</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+        </dev:type>
+      </command:parameter>
+      <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>Version</maml:name>
+        <maml:description>
+          <maml:para>The changelog version that identifies the section body to return.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.String</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+        </dev:type>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes />
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>The changelog section body without its heading or footer link definitions.</maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para>The command throws an error when the requested version is not present.</maml:para>
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>--------- Example 1 ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-KeepAChangelogEntry -Version '1.2.0'
+```</maml:para>
+          <maml:para>&#x80;</maml:para>
+          <maml:para>Get the body of version `1.2.0` from `CHANGELOG.md` in the current directory.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 2 ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-KeepAChangelogEntry -ReleaseTag 'refs/tags/v1.2.0'
+```</maml:para>
+          <maml:para>&#x80;</maml:para>
+          <maml:para>Get the body of version `1.2.0` from `CHANGELOG.md` in the current directory.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>Online Version</maml:linkText>
+        <maml:uri>https://github.com/krymtkts/PSKeepAChangelogTools/blob/main/docs/PSKeepAChangelogTools/Get-KeepAChangelogEntry.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>PSKeepAChangelogTools module</maml:linkText>
+        <maml:uri>https://github.com/krymtkts/PSKeepAChangelogTools/blob/main/docs/PSKeepAChangelogTools/PSKeepAChangelogTools.md</maml:uri>
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+  <command:command>
+    <command:details>
+      <command:name>Get-KeepAChangelogManifestReleaseNotes</command:name>
+      <maml:description>
+        <maml:para>Create module manifest release notes from recent changelog sections.</maml:para>
+      </maml:description>
+      <command:verb>Get</command:verb>
+      <command:noun>KeepAChangelogManifestReleaseNotes</command:noun>
+    </command:details>
+    <maml:description>
+      <maml:para>Reads a Keep a Changelog style file and renders release notes beginning with the specified version.
+The output starts with the target section.
+It includes up to `RecentCount` consecutive sections in changelog order.
+
+The command appends a `Full CHANGELOG` link using `FullChangelogUrl`.
+File-ending footer link definitions are not included.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Get-KeepAChangelogManifestReleaseNotes</maml:name>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="0" aliases="none">
+          <maml:name>Path</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+          </dev:type>
+        </command:parameter>
+        <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="1" aliases="none">
+          <maml:name>Version</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+          </dev:type>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="2" aliases="none">
+          <maml:name>RecentCount</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">int</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Int32</maml:name>
+          </dev:type>
+        </command:parameter>
+        <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="3" aliases="none">
+          <maml:name>FullChangelogUrl</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+          </dev:type>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="3" aliases="none">
+        <maml:name>FullChangelogUrl</maml:name>
+        <maml:description>
+          <maml:para>The URL appended to the generated release notes as the full changelog link.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.String</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+        </dev:type>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="0" aliases="none">
+        <maml:name>Path</maml:name>
+        <maml:description>
+          <maml:para>The path to the changelog.
+The default is `CHANGELOG.md` in the current directory.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.String</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+        </dev:type>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="2" aliases="none">
+        <maml:name>RecentCount</maml:name>
+        <maml:description>
+          <maml:para>The number of consecutive changelog sections to include at most.
+The default is `3`, and the accepted range is `1` through `20`.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.Int32</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Int32</maml:name>
+        </dev:type>
+      </command:parameter>
+      <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="1" aliases="none">
+        <maml:name>Version</maml:name>
+        <maml:description>
+          <maml:para>The first changelog version to include in the generated release notes.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.String</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+        </dev:type>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes />
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>The rendered changelog sections followed by a link to the full changelog.</maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para>The output uses LF line endings.
+You can pass it directly to `Set-KeepAChangelogManifestReleaseNotes`.</maml:para>
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>--------- Example 1 ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+$releaseNotes = Get-KeepAChangelogManifestReleaseNotes `
+    -Version '1.2.0' `
+    -RecentCount 3 `
+    -FullChangelogUrl 'https://github.com/example/project/blob/main/CHANGELOG.md'
+```</maml:para>
+          <maml:para>&#x80;</maml:para>
+          <maml:para>Create manifest release notes for version `1.2.0` and the next two sections in `CHANGELOG.md`.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>Online Version</maml:linkText>
+        <maml:uri>https://github.com/krymtkts/PSKeepAChangelogTools/blob/main/docs/PSKeepAChangelogTools/Get-KeepAChangelogManifestReleaseNotes.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Set-KeepAChangelogManifestReleaseNotes</maml:linkText>
+        <maml:uri>https://github.com/krymtkts/PSKeepAChangelogTools/blob/main/docs/PSKeepAChangelogTools/Set-KeepAChangelogManifestReleaseNotes.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>PSKeepAChangelogTools module</maml:linkText>
+        <maml:uri>https://github.com/krymtkts/PSKeepAChangelogTools/blob/main/docs/PSKeepAChangelogTools/PSKeepAChangelogTools.md</maml:uri>
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+  <command:command>
+    <command:details>
+      <command:name>Get-KeepAChangelogSection</command:name>
+      <maml:description>
+        <maml:para>Get changelog sections or a section for a specific version.</maml:para>
+      </maml:description>
+      <command:verb>Get</command:verb>
+      <command:noun>KeepAChangelogSection</command:noun>
+    </command:details>
+    <maml:description>
+      <maml:para>Reads a Keep a Changelog style file and returns parsed sections in file order.
+Each section contains `Version`, `Heading`, and `Body` properties.
+
+When you specify `Version`, the command returns the matching section.
+File-ending footer link definitions are not included in any section body.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Get-KeepAChangelogSection</maml:name>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="named" aliases="none">
+          <maml:name>Path</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+          </dev:type>
+        </command:parameter>
+      </command:syntaxItem>
+      <command:syntaxItem>
+        <maml:name>Get-KeepAChangelogSection</maml:name>
+        <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="named" aliases="none">
+          <maml:name>Version</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+          </dev:type>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="named" aliases="none">
+          <maml:name>Path</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+          </dev:type>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>Path</maml:name>
+        <maml:description>
+          <maml:para>The path to the changelog.
+The default is `CHANGELOG.md` in the current directory.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.String</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+        </dev:type>
+      </command:parameter>
+      <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>Version</maml:name>
+        <maml:description>
+          <maml:para>The changelog version to return.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.String</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+        </dev:type>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes />
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <maml:name>System.Object[]</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>The parsed changelog sections when `Version` is not specified.</maml:para>
+        </maml:description>
+      </command:returnValue>
+      <command:returnValue>
+        <dev:type>
+          <maml:name>System.Object</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>A parsed changelog section when you specify `Version`.</maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para>The command throws an error when a requested version is not present.</maml:para>
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>--------- Example 1 ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-KeepAChangelogSection -Path './CHANGELOG.md'
+```</maml:para>
+          <maml:para>&#x80;</maml:para>
+          <maml:para>Get every parsed section from the specified changelog.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 2 ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Get-KeepAChangelogSection -Version '1.2.0'
+```</maml:para>
+          <maml:para>&#x80;</maml:para>
+          <maml:para>Get the section for version `1.2.0` from `CHANGELOG.md` in the current directory.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>Online Version</maml:linkText>
+        <maml:uri>https://github.com/krymtkts/PSKeepAChangelogTools/blob/main/docs/PSKeepAChangelogTools/Get-KeepAChangelogSection.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-KeepAChangelogEntry</maml:linkText>
+        <maml:uri>https://github.com/krymtkts/PSKeepAChangelogTools/blob/main/docs/PSKeepAChangelogTools/Get-KeepAChangelogEntry.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>PSKeepAChangelogTools module</maml:linkText>
+        <maml:uri>https://github.com/krymtkts/PSKeepAChangelogTools/blob/main/docs/PSKeepAChangelogTools/PSKeepAChangelogTools.md</maml:uri>
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+  <command:command>
+    <command:details>
+      <command:name>Set-KeepAChangelogManifestReleaseNotes</command:name>
+      <maml:description>
+        <maml:para>Set `PrivateData.PSData.ReleaseNotes` in a PowerShell module manifest.</maml:para>
+      </maml:description>
+      <command:verb>Set</command:verb>
+      <command:noun>KeepAChangelogManifestReleaseNotes</command:noun>
+    </command:details>
+    <maml:description>
+      <maml:para>Updates the `PrivateData.PSData.ReleaseNotes` value in a PowerShell module manifest.
+When `PrivateData`, `PSData`, or `ReleaseNotes` is missing, the command adds the missing path.
+
+The command preserves comments and empty lines outside the edited range.
+It also preserves property order and other text.
+It also preserves the manifest encoding, byte order mark, and line endings.
+Before writing the file, the command checks the updated manifest syntax and release notes value.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Set-KeepAChangelogManifestReleaseNotes</maml:name>
+        <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="0" aliases="none">
+          <maml:name>ManifestPath</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+          </dev:type>
+        </command:parameter>
+        <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="1" aliases="none">
+          <maml:name>ReleaseNotes</maml:name>
+          <maml:description />
+          <command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+          </dev:type>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="named" aliases="none">
+          <maml:name>WhatIf</maml:name>
+          <maml:description />
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          </dev:type>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="named" aliases="none">
+          <maml:name>Confirm</maml:name>
+          <maml:description />
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          </dev:type>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="cf">
+        <maml:name>Confirm</maml:name>
+        <maml:description>
+          <maml:para>Prompts you for confirmation before running the cmdlet.</maml:para>
+        </maml:description>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+        </dev:type>
+      </command:parameter>
+      <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="0" aliases="none">
+        <maml:name>ManifestPath</maml:name>
+        <maml:description>
+          <maml:para>The path to the PowerShell module manifest to update.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.String</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+        </dev:type>
+      </command:parameter>
+      <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="1" aliases="none">
+        <maml:name>ReleaseNotes</maml:name>
+        <maml:description>
+          <maml:para>The text to store in `PrivateData.PSData.ReleaseNotes`.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.String</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+        </dev:type>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="wi">
+        <maml:name>WhatIf</maml:name>
+        <maml:description>
+          <maml:para>Shows what would happen without updating the manifest.</maml:para>
+        </maml:description>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+        </dev:type>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes />
+    <command:returnValues />
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para>The command produces no output.
+Use `WhatIf` to inspect the target without writing the manifest.
+
+If validation fails, the original manifest remains unchanged.</maml:para>
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>--------- Example 1 ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+$releaseNotes = Get-KeepAChangelogManifestReleaseNotes `
+    -Version '1.2.0' `
+    -FullChangelogUrl 'https://github.com/example/project/blob/main/CHANGELOG.md'</maml:para>
+          <maml:para>&#x80;</maml:para>
+          <maml:para>Set-KeepAChangelogManifestReleaseNotes `
+    -ManifestPath './Example.psd1' `
+    -ReleaseNotes $releaseNotes
+```</maml:para>
+          <maml:para>&#x80;</maml:para>
+          <maml:para>Generate release notes from `CHANGELOG.md` and write them to `Example.psd1`.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>Online Version</maml:linkText>
+        <maml:uri>https://github.com/krymtkts/PSKeepAChangelogTools/blob/main/docs/PSKeepAChangelogTools/Set-KeepAChangelogManifestReleaseNotes.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-KeepAChangelogManifestReleaseNotes</maml:linkText>
+        <maml:uri>https://github.com/krymtkts/PSKeepAChangelogTools/blob/main/docs/PSKeepAChangelogTools/Get-KeepAChangelogManifestReleaseNotes.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>PSKeepAChangelogTools module</maml:linkText>
+        <maml:uri>https://github.com/krymtkts/PSKeepAChangelogTools/blob/main/docs/PSKeepAChangelogTools/PSKeepAChangelogTools.md</maml:uri>
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+</helpItems>

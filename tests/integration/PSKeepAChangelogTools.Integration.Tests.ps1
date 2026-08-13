@@ -3,6 +3,22 @@ BeforeAll {
     $moduleRoot = Get-PSKeepAChangelogToolsTestModuleRoot
 
     $script:ModuleManifestPath = Join-Path $moduleRoot 'PSKeepAChangelogTools.psd1'
+    $script:ExternalHelpPath = Join-Path $moduleRoot 'PSKeepAChangelogTools-Help.xml'
+    $script:PublicCommandNames = @((Import-PowerShellDataFile -Path $script:ModuleManifestPath).FunctionsToExport)
+    $script:CommonParameterNames = @(
+        'Debug'
+        'ErrorAction'
+        'ErrorVariable'
+        'InformationAction'
+        'InformationVariable'
+        'OutBuffer'
+        'OutVariable'
+        'PipelineVariable'
+        'ProgressAction'
+        'Verbose'
+        'WarningAction'
+        'WarningVariable'
+    )
     Remove-Module -Name 'PSKeepAChangelogTools' -Force -ErrorAction SilentlyContinue
     Import-Module -Name $script:ModuleManifestPath -Force
 
@@ -73,6 +89,28 @@ BeforeAll {
 }
 
 Describe 'PSKeepAChangelogTools integration' {
+    It 'loads external help for every public command' {
+        $script:ExternalHelpPath | Should -Exist
+
+        foreach ($commandName in $script:PublicCommandNames) {
+            $help = Get-Help -Name $commandName -Full
+
+            $help.Synopsis | Should -Not -BeNullOrEmpty
+            $help.Description.Text | Should -Not -BeNullOrEmpty
+            $help.Examples.Example | Should -Not -BeNullOrEmpty
+            $helpParameters = @($help.Parameters.Parameter)
+            $commandParameterNames = @(
+                (Get-Command -Name $commandName).Parameters.Keys |
+                    Where-Object { $_ -notin $script:CommonParameterNames }
+            )
+            @(Compare-Object -ReferenceObject $commandParameterNames -DifferenceObject $helpParameters.Name -CaseSensitive) |
+                Should -BeNullOrEmpty
+            foreach ($parameter in $helpParameters) {
+                $parameter.Description.Text | Should -Not -BeNullOrEmpty
+            }
+        }
+    }
+
     It 'imports the configured module artifacts and updates manifest release notes through the public flow' {
         $module = Get-Module -Name 'PSKeepAChangelogTools'
         $module | Should -Not -BeNullOrEmpty

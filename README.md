@@ -34,6 +34,17 @@ Install-Module -Name PSKeepAChangelogTools -Repository PSGallery
 | `Get-KeepAChangelogManifestReleaseNotes` | Render manifest-oriented release notes for a target `-Version`.    |
 | `Set-KeepAChangelogManifestReleaseNotes` | Write derived release notes into a module manifest `ReleaseNotes`. |
 
+## Help
+
+The installed module includes external help for every public command.
+
+```powershell
+Get-Help Get-KeepAChangelogSection -Full
+Get-Help Get-KeepAChangelogSection -Online
+```
+
+The [command reference](docs/PSKeepAChangelogTools/PSKeepAChangelogTools.md) contains the Markdown help source for every public command.
+
 ## Format notes
 
 This module follows Keep a Changelog style, but it does not enforce every part of the 1.1 example.
