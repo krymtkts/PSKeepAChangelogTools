@@ -1,5 +1,11 @@
 # PSKeepAChangelogTools
 
+[![PowerShell Gallery](https://img.shields.io/powershellgallery/v/PSKeepAChangelogTools)](https://www.powershellgallery.com/packages/PSKeepAChangelogTools)
+[![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/PSKeepAChangelogTools)](https://www.powershellgallery.com/packages/PSKeepAChangelogTools)
+![Test main status](https://github.com/krymtkts/PSKeepAChangelogTools/actions/workflows/ci.yml/badge.svg)
+![Top Language](https://img.shields.io/github/languages/top/krymtkts/PSKeepAChangelogTools?color=%23b845fc)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 PSKeepAChangelogTools is a PowerShell module for Keep a Changelog style changelogs.
 
 The current design uses Keep a Changelog 1.1 as its basis.
