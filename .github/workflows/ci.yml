@@ -26,10 +26,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.1.0
 
       - name: Restore dependencies and execute all tests
-        uses: ./.github/actions/restore-and-test
+        uses: $/.github/actions/restore-and-test
         with:
           shell: ${{ matrix.shell }}
           disable-coverage: ${{ matrix.os != 'ubuntu-latest' }}
